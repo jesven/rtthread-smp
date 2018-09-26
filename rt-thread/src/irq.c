@@ -48,8 +48,6 @@ void rt_interrupt_leave_sethook(void (*hook)(void))
 
 /**@{*/
 
-volatile rt_uint8_t rt_percpu_interrupt_nest[RT_CPUS_NR];
-
 /**
  * This function will be invoked by BSP, when enter interrupt service routine
  *
@@ -90,9 +88,10 @@ void rt_interrupt_leave(void)
     rt_interrupt_nest --;
     RT_OBJECT_HOOK_CALL(rt_interrupt_leave_hook,());
 
-    /* shjic add for smp*/
+#ifdef RT_HAVE_SMP
     rt_interrupt_check_schedule();
-    /* shjic add for smp end*/
+#endif /*RT_HAVE_SMP*/
+
     rt_hw_interrupt_enable(level);
 }
 RTM_EXPORT(rt_interrupt_leave);

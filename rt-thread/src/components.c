@@ -246,7 +246,9 @@ int rtthread_startup(void)
     /* idle thread initialization */
     rt_thread_idle_init();
 
+#ifdef RT_HAVE_SMP
     spin_lock();
+#endif /*RT_HAVE_SMP*/
 
     secondy_cpu_up();
     /* start scheduler */

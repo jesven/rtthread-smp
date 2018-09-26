@@ -157,6 +157,7 @@ static rt_err_t _rt_thread_init(struct rt_thread *thread,
     thread->error = RT_EOK;
     thread->stat  = RT_THREAD_INIT;
 
+#ifdef RT_HAVE_SMP
     /* cpu bind */
     thread->bind_cpu = RT_CPUS_NR; //means no bind
 
@@ -164,6 +165,7 @@ static rt_err_t _rt_thread_init(struct rt_thread *thread,
     thread->scheduler_lock_nest = 0;
     thread->kernel_lock_nest = 0;
     thread->oncpu = RT_CPUS_NR;
+#endif /*RT_HAVE_SMP*/
 
     /* initialize cleanup function and user data */
     thread->cleanup   = 0;
@@ -618,6 +620,7 @@ rt_err_t rt_thread_control(rt_thread_t thread, int cmd, void *arg)
         return rt_thread_delete(thread);
 #endif
 
+#ifdef RT_HAVE_SMP
     case RT_THREAD_CTRL_BIND_CPU:
     {
         rt_uint8_t cpu;
@@ -633,6 +636,7 @@ rt_err_t rt_thread_control(rt_thread_t thread, int cmd, void *arg)
         thread->bind_cpu = cpu;
         break;
     }
+#endif /*RT_HAVE_SMP*/
     default:
         break;
     }

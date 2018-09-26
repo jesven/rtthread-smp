@@ -150,6 +150,7 @@ static void gtimer_isr(int vector, void *param)
 
 void second_cpu_c_start(void)
 {
+#ifdef RT_HAVE_SMP
     rt_hw_vector_init();
 
     spin_lock();
@@ -162,4 +163,5 @@ void second_cpu_c_start(void)
     rt_hw_interrupt_umask(IRQ_Zynq7000_GTIMER);
 
     rt_system_scheduler_start();
+#endif /*RT_HAVE_SMP*/
 }

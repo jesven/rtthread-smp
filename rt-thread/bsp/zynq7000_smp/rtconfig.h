@@ -7,6 +7,8 @@
 /* RT-Thread Kernel */
 
 #define RT_NAME_MAX 8
+#define RT_HAVE_SMP
+#define RT_CPUS_NR 2
 #define RT_ALIGN_SIZE 4
 /* RT_THREAD_PRIORITY_8 is not set */
 #define RT_THREAD_PRIORITY_32
@@ -50,10 +52,6 @@
 #define RT_USING_CONSOLE
 #define RT_CONSOLEBUF_SIZE 128
 #define RT_CONSOLE_DEVICE_NAME "uart0"
-/* RT_USING_MODULE is not set */
-#define ARCH_ARM
-#define ARCH_ARM_CORTEX_A
-#define ARCH_ARM_CORTEX_A9
 
 /* RT-Thread Components */
 
@@ -61,10 +59,6 @@
 #define RT_USING_USER_MAIN
 #define RT_MAIN_THREAD_STACK_SIZE 2048
 #define RT_MAIN_THREAD_PRIORITY 10
-
-/* C++ features */
-
-#define RT_USING_CPLUSPLUS
 
 /* Command shell */
 
@@ -98,7 +92,6 @@
 /* RT_USING_DFS_RAMFS is not set */
 /* RT_USING_DFS_UFFS is not set */
 /* RT_USING_DFS_JFFS2 is not set */
-/* RT_USING_DFS_NFS is not set */
 
 /* Device Drivers */
 
@@ -113,12 +106,16 @@
 /* RT_USING_PWM is not set */
 /* RT_USING_MTD_NOR is not set */
 /* RT_USING_MTD_NAND is not set */
+/* RT_USING_MTD is not set */
 /* RT_USING_RTC is not set */
 /* RT_USING_SDIO is not set */
 /* RT_USING_SPI is not set */
 /* RT_USING_WDT is not set */
-/* RT_USING_WIFI is not set */
 /* RT_USING_AUDIO is not set */
+
+/* Using WiFi */
+
+/* RT_USING_WIFI is not set */
 
 /* Using USB */
 
@@ -133,43 +130,7 @@
 #define RT_USING_POSIX_MMAP
 #define RT_USING_POSIX_TERMIOS
 #define RT_USING_POSIX_AIO
-
-/* Network */
-
-/* Socket abstraction layer */
-
-#define RT_USING_SAL
-#define SAL_USING_POSIX
-#define SAL_PROTO_FAMILIES_NUM 4
-
-/* light weight TCP/IP stack */
-
-/* RT_USING_LWIP is not set */
-
-/* Modbus master and slave stack */
-
-/* RT_USING_MODBUS is not set */
-
-/* AT commands */
-
-/* RT_USING_AT is not set */
-
-/* VBUS(Virtual Software BUS) */
-
-/* RT_USING_VBUS is not set */
-
-/* Utilities */
-
-#define RT_USING_LOGTRACE
-#define LOG_TRACE_MAX_SESSION 16
-/* LOG_TRACE_USING_LEVEL_NOTRACE is not set */
-/* LOG_TRACE_USING_LEVEL_ERROR is not set */
-/* LOG_TRACE_USING_LEVEL_WARNING is not set */
-#define LOG_TRACE_USING_LEVEL_INFO
-/* LOG_TRACE_USING_LEVEL_VERBOSE is not set */
-/* LOG_TRACE_USING_LEVEL_DEBUG is not set */
-/* LOG_TRACE_USING_MEMLOG is not set */
-/* RT_USING_RYM is not set */
+/* RT_USING_MODULE is not set */
 
 /* RT-Thread online packages */
 
@@ -233,7 +194,6 @@
 /* system packages */
 
 /* PKG_USING_GUIENGINE is not set */
-/* PKG_USING_PERSIMMON is not set */
 /* PKG_USING_CAIRO is not set */
 /* PKG_USING_PIXMAN is not set */
 /* PKG_USING_LWEXT4 is not set */

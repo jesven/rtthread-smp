@@ -43,8 +43,12 @@ void rt_system_tick_init(void)
  */
 rt_tick_t rt_tick_get(void)
 {
+#ifdef RT_HAVE_SMP
     /* return the global tick */
     return rt_percpu_data[0].rt_cpu_tick;
+#else
+    return rt_tick;
+#endif /*RT_HAVE_SMP*/
 }
 RTM_EXPORT(rt_tick_get);
 
@@ -56,7 +60,12 @@ void rt_tick_set(rt_tick_t tick)
     rt_base_t level;
 
     level = rt_hw_interrupt_disable();
+#ifdef RT_HAVE_SMP
+    /* return the global tick */
     rt_percpu_data[0].rt_cpu_tick = tick;
+#else
+    rt_tick = tick;
+#endif /*RT_HAVE_SMP*/
     rt_hw_interrupt_enable(level);
 }
 

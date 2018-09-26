@@ -14,9 +14,9 @@
 
 #include <rthw.h>
 #include <rtthread.h>
+#include <spinlock.h>
 
 #include "board.h"
-#include "spinlock.h"
 
 #define TIMER_LOAD(hw_base)             __REG32(hw_base + 0x00)
 #define TIMER_VALUE(hw_base)            __REG32(hw_base + 0x04)
@@ -175,6 +175,7 @@ static void rt_hw_timer2_isr(int vector, void *param)
 
 void second_cpu_c_start(void)
 {
+#ifdef RT_HAVE_SMP
     rt_hw_vector_init();
 
     spin_lock();
@@ -187,4 +188,5 @@ void second_cpu_c_start(void)
     rt_hw_interrupt_umask(IRQ_PBA8_TIMER0_1);
 
     rt_system_scheduler_start();
+#endif /*RT_HAVE_SMP*/
 }

@@ -36,9 +36,15 @@
 #endif
 #endif
 
+#ifdef RT_HAVE_SMP
 static struct rt_thread idle[RT_CPUS_NR];
 ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t rt_thread_stack[RT_CPUS_NR][IDLE_THREAD_STACK_SIZE];
+#else
+static struct rt_thread idle;
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t rt_thread_stack[IDLE_THREAD_STACK_SIZE];
+#endif /*RT_HAVE_SMP*/
 
 extern rt_list_t rt_thread_defunct;
 
@@ -257,6 +263,7 @@ static void rt_thread_secondy_idle_entry(void *parameter)
  *
  * @note this function must be invoked when system init.
  */
+#ifdef RT_HAVE_SMP
 void rt_thread_idle_init(void)
 {
     rt_thread_init(&idle[0],
@@ -283,6 +290,21 @@ void rt_thread_idle_init(void)
     /* startup */
     rt_thread_startup(&idle[1]);
 }
+#else
+void rt_thread_idle_init(void)
+{
+    rt_thread_init(&idle,
+                   "tidle",
+                   rt_thread_idle_entry,
+                   RT_NULL,
+                   &rt_thread_stack[0],
+                   sizeof(rt_thread_stack),
+                   RT_THREAD_PRIORITY_MAX - 1,
+                   32);
+    /* startup */
+    rt_thread_startup(&idle);
+}
+#endif /*RT_HAVE_SMP*/
 
 /**
  * @ingroup Thread

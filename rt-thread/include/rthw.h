@@ -105,9 +105,15 @@ void rt_enable_local_irq(rt_base_t level);
 /*
  * Context interfaces
  */
+#ifdef RT_HAVE_SMP
 void rt_hw_context_switch(rt_uint32_t from, rt_uint32_t to, struct rt_thread *to_thread);
 void rt_hw_context_switch_to(rt_uint32_t to, struct rt_thread *to_thread);
 void rt_hw_context_switch_interrupt(rt_uint32_t from, rt_uint32_t to, struct rt_thread *to_thread);
+#else
+void rt_hw_context_switch(rt_uint32_t from, rt_uint32_t to);
+void rt_hw_context_switch_to(rt_uint32_t to);
+void rt_hw_context_switch_interrupt(rt_uint32_t from, rt_uint32_t to);
+#endif /*RT_HAVE_SMP*/
 
 void rt_hw_console_output(const char *str);
 

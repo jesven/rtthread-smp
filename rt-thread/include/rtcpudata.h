@@ -18,7 +18,8 @@
 extern "C" {
 #endif
 
-#define RT_CPUS_NR 2
+#ifdef RT_HAVE_SMP
+
 #define RT_CPU_MASK ((1 << RT_CPUS_NR) - 1)
 
 typedef struct {
@@ -56,6 +57,16 @@ extern rt_precpu_t rt_percpu_data[RT_CPUS_NR];
 #endif
 
 #define rt_tick rt_percpu_data[rt_cpuid()].rt_cpu_tick
+
+#else
+
+extern  volatile rt_uint8_t rt_interrupt_nest;
+extern  rt_list_t rt_thread_priority_table[RT_THREAD_PRIORITY_MAX];
+extern  struct rt_thread *rt_current_thread;
+extern  rt_uint8_t rt_current_priority;
+extern  rt_tick_t rt_tick;
+
+#endif /*RT_HAVE_SMP*/
 
 #ifdef __cplusplus
 }
