@@ -25,28 +25,20 @@
 
 #include <rtthread.h>
 #include <rthw.h>
-#include "spinlock.h"
+#include <spinlock.h>
 
 void dist_ipi_send(int irq, int cpu);
 void dist_ipi_send_mask(int irq, unsigned int cpu_mask);
 
 rt_list_t rt_global_thread_priority_table[RT_THREAD_PRIORITY_MAX];
-rt_list_t rt_percpu_thread_priority_table[RT_CPUS_NR][RT_THREAD_PRIORITY_MAX];
-
-struct rt_thread *rt_percpu_current_thread[RT_CPUS_NR];
-
-rt_uint8_t rt_percpu_current_priority[RT_CPUS_NR];
 
 #if RT_THREAD_PRIORITY_MAX > 32
 /* Maximum priority level, 256 */
 rt_uint32_t rt_global_thread_ready_priority_group;
 rt_uint8_t rt_global_thread_ready_table[32];
-rt_uint32_t rt_percpu_thread_ready_priority_group[RT_CPUS_NR];
-rt_uint8_t rt_percpu_thread_ready_table[RT_CPUS_NR][32];
 #else
 /* Maximum priority level, 32 */
 rt_uint32_t rt_global_thread_ready_priority_group;
-rt_uint32_t rt_percpu_thread_ready_priority_group[RT_CPUS_NR];
 #endif
 
 rt_list_t rt_thread_defunct;
@@ -125,22 +117,27 @@ void rt_system_scheduler_init(void)
     {
         for (offset = 0; offset < RT_THREAD_PRIORITY_MAX; offset ++)
         {
-            rt_list_init(&rt_percpu_thread_priority_table[cpu][offset]);
+            rt_list_init(&rt_percpu_data[cpu].rt_cpu_thread_priority_table[offset]);
         }
 
-        rt_percpu_current_priority[cpu] = RT_THREAD_PRIORITY_MAX - 1;
-        rt_percpu_current_thread[cpu] = RT_NULL;
+        rt_percpu_data[cpu].rt_cpu_current_priority = RT_THREAD_PRIORITY_MAX - 1;
+        rt_percpu_data[cpu].rt_cpu_current_thread = RT_NULL;
     }
 
     /* initialize ready priority group */
     rt_global_thread_ready_priority_group = 0;
 
-    rt_memset(rt_percpu_thread_ready_priority_group, 0, sizeof(rt_percpu_thread_ready_priority_group));
+    for (cpu = 0; cpu < RT_CPUS_NR; cpu++)
+    {
+        rt_percpu_data[cpu].rt_cpu_thread_ready_priority_group = 0;
+    }
 
 #if RT_THREAD_PRIORITY_MAX > 32
     /* initialize ready table */
     rt_memset(rt_global_thread_ready_table, 0, sizeof(rt_global_thread_ready_table));
-    rt_memset(rt_percpu_thread_ready_table, 0, sizeof(rt_percpu_thread_ready_table));
+    for (cpu = 0; cpu < RT_CPUS_NR; cpu++)
+        rt_memset(rt_percpu_data[cpu].rt_cpu_thread_ready_table, 0, sizeof(rt_percpu_data[cpu].rt_cpu_thread_ready_table));
+    }
 #endif
 
     /* initialize thread defunct */
@@ -466,7 +463,7 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
     }
     else
     {
-        rt_list_insert_before(&(rt_percpu_thread_priority_table[thread->bind_cpu][thread->current_priority]),
+        rt_list_insert_before(&(rt_percpu_data[thread->bind_cpu].rt_cpu_thread_priority_table[thread->current_priority]),
                               &(thread->tlist));
         if (send_ipi)
         {
@@ -502,9 +499,9 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
     else
     {
 #if RT_THREAD_PRIORITY_MAX > 32
-        rt_percpu_thread_ready_table[thread->bind_cpu][thread->number] |= thread->high_mask;
+        rt_percpu_data[thread->bind_cpu].rt_cpu_thread_ready_table[thread->number] |= thread->high_mask;
 #endif
-        rt_percpu_thread_ready_priority_group[thread->bind_cpu] |= thread->number_mask;
+        rt_percpu_data[thread->bind_cpu].rt_cpu_thread_ready_priority_group |= thread->number_mask;
     }
 
     /* enable interrupt */
@@ -570,16 +567,16 @@ void rt_schedule_remove_thread(struct rt_thread *thread)
     }
     else
     {
-        if (rt_list_isempty(&(rt_percpu_thread_priority_table[thread->bind_cpu][thread->current_priority])))
+        if (rt_list_isempty(&(rt_percpu_data[thread->bind_cpu].rt_cpu_thread_priority_table[thread->current_priority])))
         {
 #if RT_THREAD_PRIORITY_MAX > 32
-            rt_percpu_thread_ready_table[thread->bind_cpu][thread->number] &= ~thread->high_mask;
+            rt_percpu_data[thread->bind_cpu].rt_cpu_thread_ready_table[thread->number] &= ~thread->high_mask;
             if (rt_global_thread_ready_table[thread->number] == 0)
             {
-                rt_percpu_thread_ready_priority_group[thread->bind_cpu] &= ~thread->number_mask;
+                rt_percpu_data[thread->bind_cpu].rt_cpu_thread_ready_priority_group &= ~thread->number_mask;
             }
 #else
-            rt_percpu_thread_ready_priority_group[thread->bind_cpu] &= ~thread->number_mask;
+            rt_percpu_data[thread->bind_cpu].rt_cpu_thread_ready_priority_group &= ~thread->number_mask;
 #endif
         }
     }

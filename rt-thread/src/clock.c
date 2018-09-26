@@ -17,9 +17,6 @@
 #include <rthw.h>
 #include <rtthread.h>
 
-static rt_tick_t percpu_rt_tick[RT_CPUS_NR] = {0};
-#define rt_tick percpu_rt_tick[rt_cpuid()]
-
 extern void rt_timer_check(void);
 
 /**
@@ -47,7 +44,7 @@ void rt_system_tick_init(void)
 rt_tick_t rt_tick_get(void)
 {
     /* return the global tick */
-    return percpu_rt_tick[0];
+    return rt_percpu_data[0].rt_cpu_tick;
 }
 RTM_EXPORT(rt_tick_get);
 
@@ -59,7 +56,7 @@ void rt_tick_set(rt_tick_t tick)
     rt_base_t level;
 
     level = rt_hw_interrupt_disable();
-    percpu_rt_tick[0] = tick;
+    rt_percpu_data[0].rt_cpu_tick = tick;
     rt_hw_interrupt_enable(level);
 }
 
