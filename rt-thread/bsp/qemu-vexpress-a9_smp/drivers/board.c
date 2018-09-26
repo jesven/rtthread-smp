@@ -166,12 +166,14 @@ void timer_clear_pending(int timer) {
     }
 }
 
+#ifdef RT_HAVE_SMP
 static void rt_hw_timer2_isr(int vector, void *param)
 {
     rt_tick_increase();
     /* clear interrupt */
     timer_clear_pending(0);
 }
+#endif
 
 void second_cpu_c_start(void)
 {

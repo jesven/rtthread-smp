@@ -122,6 +122,7 @@ typedef struct
 
 #define GT_ISR_STATUS_CLEAR              (1 << 0)
 
+#ifdef RT_HAVE_SMP
 static void gtimer_init(void)
 {
     GLOBAL_TIMER->CONTROL = 0;
@@ -147,6 +148,7 @@ static void gtimer_isr(int vector, void *param)
     /* clear interrupt */
     GLOBAL_TIMER->ISR_STATUS = GT_ISR_STATUS_CLEAR;
 }
+#endif
 
 void second_cpu_c_start(void)
 {

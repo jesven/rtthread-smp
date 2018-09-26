@@ -17,6 +17,10 @@
 #include <rthw.h>
 #include <rtthread.h>
 
+#ifndef RT_HAVE_SMP
+static rt_tick_t rt_tick;
+#endif
+
 extern void rt_timer_check(void);
 
 /**

@@ -315,7 +315,7 @@ rt_hw_context_switch_interrupt_do:
     ldr     r0, [r0]
     bl      rt_post_switch_int
     pop     {r0-r12,lr}
-#endif /*RT_HAVE_SMP*/1
+#endif /*RT_HAVE_SMP*/
 
     ldmfd   sp!, {r4}       @ pop new task's cpsr to spsr
     msr     spsr_cxsf, r4

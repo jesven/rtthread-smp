@@ -248,6 +248,7 @@ static void rt_thread_idle_entry(void *parameter)
     }
 }
 
+#ifdef RT_HAVE_SMP
 static void rt_thread_secondy_idle_entry(void *parameter)
 {
     while (1)
@@ -263,7 +264,6 @@ static void rt_thread_secondy_idle_entry(void *parameter)
  *
  * @note this function must be invoked when system init.
  */
-#ifdef RT_HAVE_SMP
 void rt_thread_idle_init(void)
 {
     rt_thread_init(&idle[0],

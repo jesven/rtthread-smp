@@ -48,6 +48,10 @@ void rt_interrupt_leave_sethook(void (*hook)(void))
 
 /**@{*/
 
+#ifndef RT_HAVE_SMP
+volatile rt_uint8_t rt_interrupt_nest;
+#endif
+
 /**
  * This function will be invoked by BSP, when enter interrupt service routine
  *

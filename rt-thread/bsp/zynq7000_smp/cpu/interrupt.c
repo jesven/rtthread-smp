@@ -59,7 +59,6 @@ void rt_hw_interrupt_init(void)
     arm_gic_cpu_init(0, gic_cpu_base);
 
     /* init interrupt nest, and context in thread sp */
-    rt_interrupt_nest = 0;
     rt_interrupt_from_thread = 0;
     rt_interrupt_to_thread = 0;
     rt_thread_switch_interrupt_flag = 0;
