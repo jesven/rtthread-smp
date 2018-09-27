@@ -6,9 +6,7 @@
 
 int main(void)
 {
-    rt_enter_critical();
-    rt_kprintf("hello rt-thread\n");
-    rt_exit_critical();
+    printf("hello rt-thread\n");
     return 0;
 }
 

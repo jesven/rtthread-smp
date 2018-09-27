@@ -11,8 +11,8 @@
  * Date           Author       Notes
  */
 
-#ifndef  __RTCOREDATA_H__
-#define  __RTCOREDATA_H__
+#ifndef  __RTCPUDATA_H__
+#define  __RTCPUDATA_H__
 
 #ifdef __cplusplus
 extern "C" {
