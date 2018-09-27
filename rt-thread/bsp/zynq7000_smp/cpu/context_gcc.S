@@ -22,23 +22,39 @@
  * 2013-07-05     Bernard      the first version
  */
 
+#include "rtconfig.h"
 .section .text, "ax"
 /*
  * rt_base_t rt_disable_local_irq();
  */
+#ifdef RT_HAVE_SMP
 .globl rt_disable_local_irq
 rt_disable_local_irq:
     mrs r0, cpsr
     cpsid i
     bx  lr
+#else
+.globl rt_hw_interrupt_disable
+rt_hw_interrupt_disable:
+    mrs r0, cpsr
+    cpsid i
+    bx  lr
+#endif /*RT_HAVE_SMP*/
 
 /*
  * void rt_enable_local_irq(rt_base_t level);
  */
+#ifdef RT_HAVE_SMP
 .globl rt_enable_local_irq
 rt_enable_local_irq:
     msr cpsr, r0
     bx  lr
+#else
+.globl rt_hw_interrupt_enable
+rt_hw_interrupt_enable:
+    msr cpsr, r0
+    bx  lr
+#endif /*RT_HAVE_SMP*/
 /*
  * void rt_hw_context_switch_to(rt_uint32 to);
  * r0 --> to
@@ -47,10 +63,12 @@ rt_enable_local_irq:
 rt_hw_context_switch_to:
     ldr sp, [r0]            @ get new task stack pointer
 
+#ifdef RT_HAVE_SMP
     push    {r0-r12,lr}
     mov     r0, r1
     bl      rt_post_switch
     pop     {r0-r12,lr}
+#endif /*RT_HAVE_SMP*/
 
     ldmfd sp!, {r4}         @ pop new task spsr
     msr spsr_cxsf, r4
@@ -81,10 +99,12 @@ rt_hw_context_switch:
     str sp, [r0]            @ store sp in preempted tasks TCB
     ldr sp, [r1]            @ get new task stack pointer
 
+#ifdef RT_HAVE_SMP
     push    {r0-r12,lr}
     mov     r0, r2
     bl      rt_post_switch
     pop     {r0-r12,lr}
+#endif /*RT_HAVE_SMP*/
 
     ldmfd sp!, {r4}         @ pop new task cpsr to spsr
     msr spsr_cxsf, r4

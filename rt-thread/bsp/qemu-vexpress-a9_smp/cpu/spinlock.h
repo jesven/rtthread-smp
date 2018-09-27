@@ -1,6 +1,7 @@
 #ifndef  __SPINLOCK_H__
 #define  __SPINLOCK_H__
 
+#ifdef RT_HAVE_SMP
 typedef struct {
     union {
         unsigned long slock;
@@ -51,5 +52,7 @@ static inline void __raw_spin_unlock(raw_spinlock_t *lock)
     lock->tickets.owner++;
     __asm__ volatile ("dsb ishst\nsev":::"memory");
 }
+
+#endif /*RT_HAVE_SMP*/
 
 #endif  /*__SPINLOCK_H__*/

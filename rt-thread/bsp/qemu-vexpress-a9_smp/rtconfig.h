@@ -7,6 +7,8 @@
 /* RT-Thread Kernel */
 
 #define RT_NAME_MAX 8
+#define RT_HAVE_SMP
+#define RT_CPUS_NR 2
 #define RT_ALIGN_SIZE 4
 /* RT_THREAD_PRIORITY_8 is not set */
 #define RT_THREAD_PRIORITY_32
@@ -234,6 +236,7 @@
 /* PKG_USING_SQLITE is not set */
 /* PKG_USING_RTI is not set */
 /* PKG_USING_LITTLEVGL2RTT is not set */
+/* PKG_USING_CMSIS is not set */
 
 /* peripheral libraries and drivers */
 
@@ -242,6 +245,9 @@
 /* PKG_USING_REALTEK_AMEBA is not set */
 /* PKG_USING_SHT2X is not set */
 /* PKG_USING_AHT10 is not set */
+/* PKG_USING_AP3216C is not set */
+/* PKG_USING_STM32_SDIO is not set */
+/* PKG_USING_ICM20608 is not set */
 
 /* miscellaneous packages */
 
@@ -257,7 +263,12 @@
 
 /* sample package */
 
-/* PKG_USING_SAMPLES is not set */
+/* samples: kernel and components samples */
+
+/* PKG_USING_KERNEL_SAMPLES is not set */
+/* PKG_USING_FILESYSTEM_SAMPLES is not set */
+/* PKG_USING_NETWORK_SAMPLES is not set */
+/* PKG_USING_PERIPHERAL_SAMPLES is not set */
 
 /* example package: hello */
 

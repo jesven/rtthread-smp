@@ -25,9 +25,10 @@
 #include <rtconfig.h>
 #include <rtdebug.h>
 #include <rtdef.h>
+#include <rtcpudata.h>
 #include <rtservice.h>
 #include <rtm.h>
-#include <smp.h>
+#include <arch.h>
 
 #ifdef __cplusplus
 extern "C" {

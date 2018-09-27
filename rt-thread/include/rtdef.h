@@ -524,10 +524,12 @@ struct rt_thread
 
     rt_uint8_t  stat;                                   /**< thread status */
 
+#ifdef RT_HAVE_SMP
     rt_uint8_t  bind_cpu;                               /**< thread is bind to cpu */
     rt_uint16_t  scheduler_lock_nest;                    /**< scheduler lock count */
     rt_uint16_t  kernel_lock_nest;                       /**< kernel lock count */
     rt_uint16_t  oncpu;                                 /**< process on cpu` */
+#endif /*RT_HAVE_SMP*/
 
     /* priority */
     rt_uint8_t  current_priority;                       /**< current priority */
