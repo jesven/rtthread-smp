@@ -252,7 +252,7 @@ int rtthread_startup(void)
     rt_thread_idle_init();
 
 #ifdef RT_HAVE_SMP
-    spin_lock();
+    rt_kernel_lock();
 #endif /*RT_HAVE_SMP*/
 
     /* start scheduler */

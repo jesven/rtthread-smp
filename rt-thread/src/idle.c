@@ -227,14 +227,25 @@ void rt_thread_idle_excute(void)
 
 static void rt_thread_idle_entry(void *parameter)
 {
-#ifdef RT_USING_IDLE_HOOK
-    rt_size_t i;
+
+#ifdef RT_HAVE_SMP
+    int cpu_id = rt_cpuid();
+
+    if (cpu_id != 0)
+    {
+        while (1)
+        {
+            asm volatile ("wfe":::"memory", "cc");
+        }
+    }
 #endif
 
     while (1)
     {
 
 #ifdef RT_USING_IDLE_HOOK
+        rt_size_t i;
+
         for (i = 0; i < RT_IDEL_HOOK_LIST_SIZE; i++)
         {
             if (idle_hook_list[i] != RT_NULL)
@@ -249,14 +260,6 @@ static void rt_thread_idle_entry(void *parameter)
 }
 
 #ifdef RT_HAVE_SMP
-static void rt_thread_secondy_idle_entry(void *parameter)
-{
-    while (1)
-    {
-        asm volatile ("wfe":::"memory", "cc");
-    }
-}
-
 /**
  * @ingroup SystemInit
  *
@@ -280,7 +283,7 @@ void rt_thread_idle_init(void)
 
     rt_thread_init(&idle[1],
                    "tidle1",
-                   rt_thread_secondy_idle_entry,
+                   rt_thread_idle_entry,
                    RT_NULL,
                    &rt_thread_stack[1][0],
                    sizeof(rt_thread_stack[0]),

@@ -155,7 +155,7 @@ void second_cpu_c_start(void)
 #ifdef RT_HAVE_SMP
     rt_hw_vector_init();
 
-    spin_lock();
+    rt_kernel_lock();
 
     arm_gic_cpu_init(0, Zynq7000_GIC_CPU_BASE);
     arm_gic_set_cpu(0, IRQ_Zynq7000_GTIMER, 0x2); //指定到cpu1

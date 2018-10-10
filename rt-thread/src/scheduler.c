@@ -836,7 +836,7 @@ void rt_schedule_remove_thread(struct rt_thread *thread)
  */
 
 #ifdef RT_HAVE_SMP
-raw_spinlock_t rt_scheduler_lock = {.slock = 0};
+raw_spinlock_t _rt_scheduler_lock = {.slock = 0};
 
 void rt_enter_critical(void)
 {
@@ -852,7 +852,7 @@ void rt_enter_critical(void)
 
     if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
     {
-        __raw_spin_lock(&rt_scheduler_lock);
+        __raw_spin_lock(&_rt_scheduler_lock);
     }
     rt_current_thread->scheduler_lock_nest ++;
 
@@ -896,7 +896,7 @@ void rt_exit_critical(void)
 
     if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
     {
-        __raw_spin_unlock(&rt_scheduler_lock);
+        __raw_spin_unlock(&_rt_scheduler_lock);
     }
 
     if (rt_current_thread->scheduler_lock_nest <= 0)
@@ -965,7 +965,7 @@ void rt_post_switch(struct rt_thread *thread)
     rt_current_thread = thread;
     if (!thread->kernel_lock_nest)
     {
-        spin_unlock();
+        rt_kernel_unlock();
     }
 }
 RTM_EXPORT(rt_post_switch);
@@ -980,7 +980,7 @@ void rt_post_switch_int(struct rt_thread *thread)
     rt_current_thread = thread;
     if (!thread->kernel_lock_nest)
     {
-        spin_unlock();
+        rt_kernel_unlock();
     }
 }
 RTM_EXPORT(rt_post_switch_int);
