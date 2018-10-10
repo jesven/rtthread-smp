@@ -225,6 +225,10 @@ void rt_thread_idle_excute(void)
     }
 }
 
+#ifdef RT_HAVE_SMP
+extern void plat_secondy_cpu_idle(void);
+#endif
+
 static void rt_thread_idle_entry(void *parameter)
 {
 
@@ -235,7 +239,7 @@ static void rt_thread_idle_entry(void *parameter)
     {
         while (1)
         {
-            asm volatile ("wfe":::"memory", "cc");
+            plat_secondy_cpu_idle();
         }
     }
 #endif

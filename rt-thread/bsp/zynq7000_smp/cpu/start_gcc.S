@@ -409,7 +409,7 @@ secondy_cpu_start:
     cps #Mode_SVC
     ldr sp, =svc_stack_2_limit
 
-    b second_cpu_c_start
+    b secondy_cpu_c_start
 
 .bss
 .align 2   //align to  2~2=4

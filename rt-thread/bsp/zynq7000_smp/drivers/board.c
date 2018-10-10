@@ -150,7 +150,7 @@ static void gtimer_isr(int vector, void *param)
 }
 #endif
 
-void second_cpu_c_start(void)
+void secondy_cpu_c_start(void)
 {
 #ifdef RT_HAVE_SMP
     rt_hw_vector_init();
@@ -167,3 +167,10 @@ void second_cpu_c_start(void)
     rt_system_scheduler_start();
 #endif /*RT_HAVE_SMP*/
 }
+
+#ifdef RT_HAVE_SMP
+void plat_secondy_cpu_idle(void)
+{
+    asm volatile ("wfe":::"memory", "cc");
+}
+#endif /*RT_HAVE_SMP*/
