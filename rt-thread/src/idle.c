@@ -321,5 +321,9 @@ void rt_thread_idle_init(void)
  */
 rt_thread_t rt_thread_idle_gethandler(void)
 {
+#ifdef RT_HAVE_SMP
+    return (rt_thread_t)(&idle[rt_cpuid()]);
+#else
     return (rt_thread_t)(&idle);
+#endif
 }
