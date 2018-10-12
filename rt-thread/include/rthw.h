@@ -21,6 +21,10 @@
 
 #include <rtthread.h>
 
+#ifdef RT_HAVE_SMP
+#include <rtlock.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -96,11 +100,13 @@ rt_isr_handler_t rt_hw_interrupt_install(int              vector,
                                          void            *param,
                                          char            *name);
 
+#ifdef RT_HAVE_SMP
+rt_base_t rt_hw_local_irq_disable();
+void rt_hw_local_irq_enable(rt_base_t level);
+#else
 rt_base_t rt_hw_interrupt_disable(void);
 void rt_hw_interrupt_enable(rt_base_t level);
-
-rt_base_t rt_local_irq_disable();
-void rt_local_irq_enable(rt_base_t level);
+#endif /*RT_HAVE_SMP*/
 
 /*
  * Context interfaces

@@ -18,7 +18,6 @@
 
 #include <rthw.h>
 #include <rtthread.h>
-#include <rtlock.h>
 
 #ifdef RT_USING_USER_MAIN
 #ifndef RT_MAIN_THREAD_STACK_SIZE

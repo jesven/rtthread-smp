@@ -1,6 +1,5 @@
 #include <rtthread.h>
 #include <rthw.h>
-#include <rtlock.h>
 
 #ifdef RT_HAVE_SMP
 
@@ -10,7 +9,7 @@
 rt_base_t rt_hw_interrupt_disable(void)
 {
     rt_base_t level;
-    level = rt_local_irq_disable();
+    level = rt_hw_local_irq_disable();
     if (rt_current_thread != RT_NULL)
     {
         if (rt_current_thread->kernel_lock_nest++ == 0)
@@ -36,7 +35,7 @@ void rt_hw_interrupt_enable(rt_base_t level)
             rt_kernel_unlock();
         }
     }
-    rt_local_irq_enable(level);
+    rt_hw_local_irq_enable(level);
 }
 RTM_EXPORT(rt_hw_interrupt_enable);
 
@@ -76,7 +75,7 @@ void rt_enter_critical(void)
     register rt_base_t level;
 
     /* disable interrupt */
-    level = rt_local_irq_disable();
+    level = rt_hw_local_irq_disable();
 
     /*
      * the maximal number of nest is RT_UINT16_MAX, which is big
@@ -90,7 +89,7 @@ void rt_enter_critical(void)
     rt_current_thread->scheduler_lock_nest ++;
 
     /* enable interrupt */
-    rt_local_irq_enable(level);
+    rt_hw_local_irq_enable(level);
 }
 RTM_EXPORT(rt_enter_critical);
 
@@ -102,7 +101,7 @@ void rt_exit_critical(void)
     register rt_base_t level;
 
     /* disable interrupt */
-    level = rt_local_irq_disable();
+    level = rt_hw_local_irq_disable();
 
     rt_current_thread->scheduler_lock_nest --;
 
@@ -115,14 +114,14 @@ void rt_exit_critical(void)
     {
         rt_current_thread->scheduler_lock_nest = 0;
         /* enable interrupt */
-        rt_local_irq_enable(level);
+        rt_hw_local_irq_enable(level);
 
         rt_schedule();
     }
     else
     {
         /* enable interrupt */
-        rt_local_irq_enable(level);
+        rt_hw_local_irq_enable(level);
     }
 }
 RTM_EXPORT(rt_exit_critical);

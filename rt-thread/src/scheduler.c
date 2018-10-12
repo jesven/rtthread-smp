@@ -25,7 +25,6 @@
 
 #include <rtthread.h>
 #include <rthw.h>
-#include <rtlock.h>
 
 #ifdef RT_HAVE_SMP
 void dist_ipi_send(int irq, int cpu);

@@ -25,11 +25,11 @@
 #include "rtconfig.h"
 .section .text, "ax"
 /*
- * rt_base_t rt_local_irq_disable();
+ * rt_base_t rt_hw_local_irq_disable();
  */
 #ifdef RT_HAVE_SMP
-.globl rt_local_irq_disable
-rt_local_irq_disable:
+.globl rt_hw_local_irq_disable
+rt_hw_local_irq_disable:
     mrs r0, cpsr
     cpsid i
     bx  lr
@@ -42,11 +42,11 @@ rt_hw_interrupt_disable:
 #endif /*RT_HAVE_SMP*/
 
 /*
- * void rt_local_irq_enable(rt_base_t level);
+ * void rt_hw_local_irq_enable(rt_base_t level);
  */
 #ifdef RT_HAVE_SMP
-.globl rt_local_irq_enable
-rt_local_irq_enable:
+.globl rt_hw_local_irq_enable
+rt_hw_local_irq_enable:
     msr cpsr, r0
     bx  lr
 #else
