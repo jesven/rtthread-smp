@@ -313,7 +313,7 @@ rt_hw_context_switch_interrupt_do:
     push    {r0-r12,lr}
     ldr     r0, =rt_thread_switch_interrupt_to_thread
     ldr     r0, [r0]
-    bl      rt_post_switch_int
+    bl      rt_interrupt_post_switch
     pop     {r0-r12,lr}
 #endif /*RT_HAVE_SMP*/
 

@@ -8,7 +8,7 @@ raw_spinlock_t _rt_kernel_lock = {.slock = 0};
 rt_base_t rt_hw_interrupt_disable(void)
 {
     rt_base_t level;
-    level = rt_disable_local_irq();
+    level = rt_local_irq_disable();
     if (rt_current_thread != RT_NULL)
     {
         if (rt_current_thread->kernel_lock_nest++ == 0)
@@ -30,7 +30,7 @@ void rt_hw_interrupt_enable(rt_base_t level)
             rt_kernel_unlock();
         }
     }
-    rt_enable_local_irq(level);
+    rt_local_irq_enable(level);
 }
 
 void rt_hw_interrupt_disable_int(void)

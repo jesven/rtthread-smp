@@ -491,6 +491,10 @@ void rt_schedule(void)
 }
 #endif /*RT_HAVE_SMP*/
 
+/**
+ * This function checks if a schedule is needed in interrupt. If yes, it will select one thread
+ * with the highest priority level, add save this information.
+ */
 #ifdef RT_HAVE_SMP
 void rt_interrupt_check_schedule(void)
 {
@@ -586,6 +590,7 @@ void rt_interrupt_check_schedule(void)
  * thread will be set as READY and remove from suspend queue.
  *
  * @param thread the thread to be inserted
+ * @param send_ipi need notify to other CPUs
  * @note Please do not invoke this function in user application.
  */
 #ifdef RT_HAVE_SMP
@@ -668,6 +673,13 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
     rt_hw_interrupt_enable(temp);
 }
 #else
+/*
+ * This function will insert a thread to system ready queue. The state of
+ * thread will be set as READY and remove from suspend queue.
+ *
+ * @param thread the thread to be inserted
+ * @note Please do not invoke this function in user application.
+ */
 void rt_schedule_insert_thread(struct rt_thread *thread)
 {
     register rt_base_t temp;
@@ -709,11 +721,23 @@ void rt_schedule_insert_thread(struct rt_thread *thread)
 #endif /*RT_HAVE_SMP*/
 
 #ifdef RT_HAVE_SMP
+/*
+ * This function call _rt_schedule_insert_thread with needs notify other CPUs
+ *
+ * @param thread the thread to be inserted
+ * @note Please do not invoke this function in user application.
+ */
 void rt_schedule_insert_thread(struct rt_thread *thread)
 {
     _rt_schedule_insert_thread(thread, 1);
 }
 
+/*
+ * This function call _rt_schedule_insert_thread with do not notify other CPUs
+ *
+ * @param thread the thread to be inserted
+ * @note Please do not invoke this function in user application.
+ */
 void rt_schedule_insert_thread_no_send_ipi(struct rt_thread *thread)
 {
     _rt_schedule_insert_thread(thread, 0);
@@ -843,7 +867,7 @@ void rt_enter_critical(void)
     register rt_base_t level;
 
     /* disable interrupt */
-    level = rt_disable_local_irq();
+    level = rt_local_irq_disable();
 
     /*
      * the maximal number of nest is RT_UINT16_MAX, which is big
@@ -857,7 +881,7 @@ void rt_enter_critical(void)
     rt_current_thread->scheduler_lock_nest ++;
 
     /* enable interrupt */
-    rt_enable_local_irq(level);
+    rt_local_irq_enable(level);
 }
 RTM_EXPORT(rt_enter_critical);
 #else
@@ -890,7 +914,7 @@ void rt_exit_critical(void)
     register rt_base_t level;
 
     /* disable interrupt */
-    level = rt_disable_local_irq();
+    level = rt_local_irq_disable();
 
     rt_current_thread->scheduler_lock_nest --;
 
@@ -903,14 +927,14 @@ void rt_exit_critical(void)
     {
         rt_current_thread->scheduler_lock_nest = 0;
         /* enable interrupt */
-        rt_enable_local_irq(level);
+        rt_local_irq_enable(level);
 
         rt_schedule();
     }
     else
     {
         /* enable interrupt */
-        rt_enable_local_irq(level);
+        rt_local_irq_enable(level);
     }
 }
 RTM_EXPORT(rt_exit_critical);
@@ -938,6 +962,7 @@ void rt_exit_critical(void)
         rt_hw_interrupt_enable(level);
     }
 }
+RTM_EXPORT(rt_exit_critical);
 #endif /*RT_HAVE_SMP*/
 
 /**
@@ -954,9 +979,12 @@ rt_uint16_t rt_critical_level(void)
 #endif /*RT_HAVE_SMP*/
 }
 RTM_EXPORT(rt_critical_level);
-/**@}*/
 
 #ifdef RT_HAVE_SMP
+/**
+ * This function is invoked by scheduler.
+ * It will unlock the kernel lock when target thread is not lock the kernel.
+ */
 void rt_post_switch(struct rt_thread *thread)
 {
 #if 0
@@ -970,7 +998,11 @@ void rt_post_switch(struct rt_thread *thread)
 }
 RTM_EXPORT(rt_post_switch);
 
-void rt_post_switch_int(struct rt_thread *thread)
+/**
+ * This function is invoked by the interrupt routine when it exiting the interrupt.
+ * It will unlock the kernel lock when target thread is not lock the kernel.
+ */
+void rt_interrupt_post_switch(struct rt_thread *thread)
 {
 #if 0
     rt_kprintf("%d I %s -> %s\n", rt_cpuid(), rt_current_thread->name, thread->name);
@@ -983,5 +1015,7 @@ void rt_post_switch_int(struct rt_thread *thread)
         rt_kernel_unlock();
     }
 }
-RTM_EXPORT(rt_post_switch_int);
+RTM_EXPORT(rt_interrupt_post_switch);
 #endif /*RT_HAVE_SMP*/
+
+/**@}*/

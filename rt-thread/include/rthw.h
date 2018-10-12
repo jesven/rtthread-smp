@@ -99,8 +99,8 @@ rt_isr_handler_t rt_hw_interrupt_install(int              vector,
 rt_base_t rt_hw_interrupt_disable(void);
 void rt_hw_interrupt_enable(rt_base_t level);
 
-rt_base_t rt_disable_local_irq();
-void rt_enable_local_irq(rt_base_t level);
+rt_base_t rt_local_irq_disable();
+void rt_local_irq_enable(rt_base_t level);
 
 /*
  * Context interfaces

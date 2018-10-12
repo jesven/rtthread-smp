@@ -554,7 +554,8 @@ RTM_EXPORT(rt_thread_mdelay);
  * @param cmd the control command, which includes
  *  RT_THREAD_CTRL_CHANGE_PRIORITY for changing priority level of thread;
  *  RT_THREAD_CTRL_STARTUP for starting a thread;
- *  RT_THREAD_CTRL_CLOSE for delete a thread.
+ *  RT_THREAD_CTRL_CLOSE for delete a thread;
+ *  RT_THREAD_CTRL_BIND_CPU for bind the thread to a CPU.
  * @param arg the argument of control command
  *
  * @return RT_EOK
