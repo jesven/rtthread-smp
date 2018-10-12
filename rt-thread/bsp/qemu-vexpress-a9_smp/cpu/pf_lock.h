@@ -1,5 +1,5 @@
-#ifndef  __SPINLOCK_H__
-#define  __SPINLOCK_H__
+#ifndef  __PF_LOCK_H__
+#define  __PF_LOCK_H__
 
 #ifdef RT_HAVE_SMP
 typedef struct {
@@ -13,9 +13,13 @@ typedef struct {
 } raw_spinlock_t;
 
 extern raw_spinlock_t _rt_kernel_lock;
+extern raw_spinlock_t _rt_scheduler_lock;
 
 #define rt_kernel_lock() __raw_spin_lock(&_rt_kernel_lock);
 #define rt_kernel_unlock() __raw_spin_unlock(&_rt_kernel_lock);
+
+#define rt_scheduler_lock() __raw_spin_lock(&_rt_scheduler_lock);
+#define rt_scheduler_unlock() __raw_spin_unlock(&_rt_scheduler_lock);
 
 static inline void __raw_spin_lock(raw_spinlock_t *lock)
 {

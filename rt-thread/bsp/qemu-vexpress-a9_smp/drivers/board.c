@@ -14,7 +14,7 @@
 
 #include <rthw.h>
 #include <rtthread.h>
-#include <spinlock.h>
+#include <rtlock.h>
 
 #include "board.h"
 
@@ -100,7 +100,6 @@ void secondy_cpu_up(void)
     dist_ipi_send(0, 1);
 }
 
-#include "spinlock.h"
 #include "gic.h"
 #include "stdint.h"
 

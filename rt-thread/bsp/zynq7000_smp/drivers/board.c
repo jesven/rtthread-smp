@@ -16,7 +16,7 @@
 #include <rtthread.h>
 
 #include "board.h"
-#include "spinlock.h"
+#include "pf_lock.h"
 
 typedef struct
 {
@@ -98,7 +98,6 @@ void secondy_cpu_up(void)
 //    dist_ipi_send(0, 1);
 }
 
-#include "spinlock.h"
 #include "gic.h"
 #include "stdint.h"
 

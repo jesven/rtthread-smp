@@ -25,7 +25,7 @@
 
 #include <rtthread.h>
 #include <rthw.h>
-#include <spinlock.h>
+#include <rtlock.h>
 
 #ifdef RT_HAVE_SMP
 void dist_ipi_send(int irq, int cpu);
@@ -859,32 +859,7 @@ void rt_schedule_remove_thread(struct rt_thread *thread)
  * This function will lock the thread scheduler.
  */
 
-#ifdef RT_HAVE_SMP
-raw_spinlock_t _rt_scheduler_lock = {.slock = 0};
-
-void rt_enter_critical(void)
-{
-    register rt_base_t level;
-
-    /* disable interrupt */
-    level = rt_local_irq_disable();
-
-    /*
-     * the maximal number of nest is RT_UINT16_MAX, which is big
-     * enough and does not check here
-     */
-
-    if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
-    {
-        __raw_spin_lock(&_rt_scheduler_lock);
-    }
-    rt_current_thread->scheduler_lock_nest ++;
-
-    /* enable interrupt */
-    rt_local_irq_enable(level);
-}
-RTM_EXPORT(rt_enter_critical);
-#else
+#ifndef RT_HAVE_SMP
 void rt_enter_critical(void)
 {
     register rt_base_t level;
@@ -908,37 +883,7 @@ RTM_EXPORT(rt_enter_critical);
 /**
  * This function will unlock the thread scheduler.
  */
-#ifdef RT_HAVE_SMP
-void rt_exit_critical(void)
-{
-    register rt_base_t level;
-
-    /* disable interrupt */
-    level = rt_local_irq_disable();
-
-    rt_current_thread->scheduler_lock_nest --;
-
-    if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
-    {
-        __raw_spin_unlock(&_rt_scheduler_lock);
-    }
-
-    if (rt_current_thread->scheduler_lock_nest <= 0)
-    {
-        rt_current_thread->scheduler_lock_nest = 0;
-        /* enable interrupt */
-        rt_local_irq_enable(level);
-
-        rt_schedule();
-    }
-    else
-    {
-        /* enable interrupt */
-        rt_local_irq_enable(level);
-    }
-}
-RTM_EXPORT(rt_exit_critical);
-#else
+#ifndef RT_HAVE_SMP
 void rt_exit_critical(void)
 {
     register rt_base_t level;
