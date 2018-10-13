@@ -59,4 +59,4 @@ static inline void __raw_spin_unlock(raw_spinlock_t *lock)
 
 #endif /*RT_HAVE_SMP*/
 
-#endif  /*__SPINLOCK_H__*/
+#endif  /*__PF_LOCK_H__*/
