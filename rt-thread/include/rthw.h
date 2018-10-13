@@ -22,7 +22,7 @@
 #include <rtthread.h>
 
 #ifdef RT_HAVE_SMP
-#include <rtlock.h>
+#include <pf_lock.h>
 #endif
 
 #ifdef __cplusplus
@@ -103,6 +103,10 @@ rt_isr_handler_t rt_hw_interrupt_install(int              vector,
 #ifdef RT_HAVE_SMP
 rt_base_t rt_hw_local_irq_disable();
 void rt_hw_local_irq_enable(rt_base_t level);
+
+#define rt_hw_interrupt_disable rt_kernel_lock
+#define rt_hw_interrupt_enable rt_kernel_unlock
+
 #else
 rt_base_t rt_hw_interrupt_disable(void);
 void rt_hw_interrupt_enable(rt_base_t level);

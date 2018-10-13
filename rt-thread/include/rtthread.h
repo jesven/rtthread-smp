@@ -445,6 +445,20 @@ rt_err_t  rt_device_control(rt_device_t dev, int cmd, void *arg);
 void rt_interrupt_enter(void);
 void rt_interrupt_leave(void);
 
+#ifdef RT_HAVE_SMP
+/*
+ * smp kernel lock service
+ */
+
+/*
+ * rt_kernel_lock_in_interrupt snd rt_kernel_unlock_in_interrupt on can be called by BSP
+ */
+rt_base_t rt_kernel_lock(void);
+void rt_kernel_unlock(rt_base_t level);
+void rt_kernel_lock_in_interrupt(void);
+void rt_kernel_unlock_in_interrupt(void);
+#endif
+
 /*
  * the number of nested interrupts.
  */

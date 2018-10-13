@@ -858,7 +858,30 @@ void rt_schedule_remove_thread(struct rt_thread *thread)
  * This function will lock the thread scheduler.
  */
 
-#ifndef RT_HAVE_SMP
+#ifdef RT_HAVE_SMP
+void rt_enter_critical(void)
+{
+    register rt_base_t level;
+
+    /* disable interrupt */
+    level = rt_hw_local_irq_disable();
+
+    /*
+     * the maximal number of nest is RT_UINT16_MAX, which is big
+     * enough and does not check here
+     */
+
+    if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
+    {
+        rt_pf_scheduler_lock();
+    }
+    rt_current_thread->scheduler_lock_nest ++;
+
+    /* enable interrupt */
+    rt_hw_local_irq_enable(level);
+}
+RTM_EXPORT(rt_enter_critical);
+#else
 void rt_enter_critical(void)
 {
     register rt_base_t level;
@@ -882,7 +905,37 @@ RTM_EXPORT(rt_enter_critical);
 /**
  * This function will unlock the thread scheduler.
  */
-#ifndef RT_HAVE_SMP
+#ifdef RT_HAVE_SMP
+void rt_exit_critical(void)
+{
+    register rt_base_t level;
+
+    /* disable interrupt */
+    level = rt_hw_local_irq_disable();
+
+    rt_current_thread->scheduler_lock_nest --;
+
+    if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
+    {
+        rt_pf_scheduler_unlock();
+    }
+
+    if (rt_current_thread->scheduler_lock_nest <= 0)
+    {
+        rt_current_thread->scheduler_lock_nest = 0;
+        /* enable interrupt */
+        rt_hw_local_irq_enable(level);
+
+        rt_schedule();
+    }
+    else
+    {
+        /* enable interrupt */
+        rt_hw_local_irq_enable(level);
+    }
+}
+RTM_EXPORT(rt_exit_critical);
+#else
 void rt_exit_critical(void)
 {
     register rt_base_t level;
@@ -937,7 +990,7 @@ void rt_post_switch(struct rt_thread *thread)
     rt_current_thread = thread;
     if (!thread->kernel_lock_nest)
     {
-        rt_kernel_unlock();
+        rt_pf_kernel_unlock();
     }
 }
 RTM_EXPORT(rt_post_switch);
@@ -956,10 +1009,78 @@ void rt_interrupt_post_switch(struct rt_thread *thread)
     rt_current_thread = thread;
     if (!thread->kernel_lock_nest)
     {
-        rt_kernel_unlock();
+        rt_pf_kernel_unlock();
     }
 }
 RTM_EXPORT(rt_interrupt_post_switch);
+#endif /*RT_HAVE_SMP*/
+
+#ifdef RT_HAVE_SMP
+
+/**
+ * This function will lock the thread scheduler and disable local irq.
+ */
+rt_base_t rt_kernel_lock(void)
+{
+    rt_base_t level;
+    level = rt_hw_local_irq_disable();
+    if (rt_current_thread != RT_NULL)
+    {
+        if (rt_current_thread->kernel_lock_nest++ == 0)
+        {
+            rt_current_thread->scheduler_lock_nest++;
+            rt_pf_kernel_lock();
+        }
+    }
+    return level;
+}
+RTM_EXPORT(rt_kernel_lock);
+
+/**
+ * This function will restore the thread scheduler and restore local irq.
+ */
+void rt_kernel_unlock(rt_base_t level)
+{
+    if (rt_current_thread != RT_NULL)
+    {
+        if (--rt_current_thread->kernel_lock_nest == 0)
+        {
+            rt_current_thread->scheduler_lock_nest--;
+            rt_pf_kernel_unlock();
+        }
+    }
+    rt_hw_local_irq_enable(level);
+}
+RTM_EXPORT(rt_kernel_unlock);
+
+/**
+ * This function is the version of rt_hw_interrupt_disable in interrupt.
+ */
+void rt_kernel_lock_in_interrupt(void)
+{
+    if (rt_current_thread != RT_NULL)
+    {
+        rt_current_thread->kernel_lock_nest++;
+        rt_current_thread->scheduler_lock_nest++;
+        rt_pf_kernel_lock();
+    }
+}
+RTM_EXPORT(rt_kernel_lock_in_interrupt);
+
+/**
+ * This function is the version of rt_hw_interrupt_enable in interrupt.
+ */
+void rt_kernel_unlock_in_interrupt(void)
+{
+    if (rt_current_thread != RT_NULL)
+    {
+        rt_pf_kernel_unlock();
+        rt_current_thread->kernel_lock_nest--;
+        rt_current_thread->scheduler_lock_nest--;
+    }
+}
+RTM_EXPORT(rt_kernel_unlock_in_interrupt);
+
 #endif /*RT_HAVE_SMP*/
 
 /**@}*/

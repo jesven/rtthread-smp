@@ -247,7 +247,7 @@ vector_irq:
     bl      rt_interrupt_enter
     bl      rt_hw_trap_irq
 #ifdef RT_HAVE_SMP
-    bl      rt_hw_interrupt_disable_int
+    bl      rt_kernel_lock_in_interrupt
 #endif /*RT_HAVE_SMP*/
     bl      rt_interrupt_leave
 
@@ -259,7 +259,7 @@ vector_irq:
     beq     rt_hw_context_switch_interrupt_do
 
 #ifdef RT_HAVE_SMP
-    bl      rt_hw_interrupt_enable_int
+    bl      rt_kernel_unlock_in_interrupt
 #endif /*RT_HAVE_SMP*/
     ldmfd   sp!, {r0-r12,lr}
     subs    pc,  lr, #4
