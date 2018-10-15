@@ -21,10 +21,6 @@
 
 #include <rtthread.h>
 
-#ifdef RT_HAVE_SMP
-#include <pf_lock.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

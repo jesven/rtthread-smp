@@ -180,18 +180,14 @@ void rt_system_scheduler_start(void)
 
     number = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
     highest_ready_priority = (number << 3) + __rt_ffs(rt_global_thread_ready_table[number]) - 1;
-#else
-    highest_ready_priority = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
-#endif
-
-#if RT_THREAD_PRIORITY_MAX > 32
     number = __rt_ffs(rt_thread_ready_priority_group) - 1;
     l_highest_ready_priority = (number << 3) + __rt_ffs(rt_thread_ready_table[number]) - 1;
 #else
+    highest_ready_priority = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
     l_highest_ready_priority = __rt_ffs(rt_thread_ready_priority_group) - 1;
 #endif
 
-    if (highest_ready_priority < l_highest_ready_priority) //这里用<,表示同优先级下核绑定的任务更优先
+    if (highest_ready_priority < l_highest_ready_priority)
     {
         /* get switch to thread */
         to_thread = rt_list_entry(rt_global_thread_priority_table[highest_ready_priority].next,
@@ -275,6 +271,9 @@ void rt_schedule(void)
 
         if (rt_global_thread_ready_priority_group != 0 || rt_thread_ready_priority_group != 0)
         {
+#if RT_THREAD_PRIORITY_MAX > 32
+            register rt_ubase_t number;
+#endif
             rt_current_thread->oncpu = RT_CPUS_NR;
             if ((rt_current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
@@ -283,16 +282,10 @@ void rt_schedule(void)
 
 #if RT_THREAD_PRIORITY_MAX <= 32
             highest_ready_priority = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
-#else
-            register rt_ubase_t number;
-
-            number = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
-            highest_ready_priority = (number << 3) + __rt_ffs(rt_global_thread_ready_table[number]) - 1;
-#endif
-
-#if RT_THREAD_PRIORITY_MAX <= 32
             l_highest_ready_priority = __rt_ffs(rt_thread_ready_priority_group) - 1;
 #else
+            number = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
+            highest_ready_priority = (number << 3) + __rt_ffs(rt_global_thread_ready_table[number]) - 1;
             number = __rt_ffs(rt_thread_ready_priority_group) - 1;
             l_highest_ready_priority = (number << 3) + __rt_ffs(rt_thread_ready_table[number]) - 1;
 #endif
@@ -402,6 +395,9 @@ void rt_schedule(void)
 
         if (rt_global_thread_ready_priority_group != 0)
         {
+#if RT_THREAD_PRIORITY_MAX > 32
+            register rt_ubase_t number;
+#endif
             if ((rt_current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
                 rt_schedule_insert_thread(rt_current_thread);
@@ -410,8 +406,6 @@ void rt_schedule(void)
 #if RT_THREAD_PRIORITY_MAX <= 32
             highest_ready_priority = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
 #else
-            register rt_ubase_t number;
-
             number = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
             highest_ready_priority = (number << 3) + __rt_ffs(rt_global_thread_ready_table[number]) - 1;
 #endif
@@ -506,6 +500,9 @@ void rt_interrupt_check_schedule(void)
 
         if (rt_global_thread_ready_priority_group != 0 || rt_thread_ready_priority_group != 0)
         {
+#if RT_THREAD_PRIORITY_MAX > 32
+            register rt_ubase_t number;
+#endif
             rt_current_thread->oncpu = RT_CPUS_NR;
             if ((rt_current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
@@ -513,16 +510,10 @@ void rt_interrupt_check_schedule(void)
             }
 #if RT_THREAD_PRIORITY_MAX <= 32
             highest_ready_priority = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
-#else
-            register rt_ubase_t number;
-
-            number = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
-            highest_ready_priority = (number << 3) + __rt_ffs(rt_global_thread_ready_table[number]) - 1;
-#endif
-
-#if RT_THREAD_PRIORITY_MAX <= 32
             l_highest_ready_priority = __rt_ffs(rt_thread_ready_priority_group) - 1;
 #else
+            number = __rt_ffs(rt_global_thread_ready_priority_group) - 1;
+            highest_ready_priority = (number << 3) + __rt_ffs(rt_global_thread_ready_table[number]) - 1;
             number = __rt_ffs(rt_thread_ready_priority_group) - 1;
             l_highest_ready_priority = (number << 3) + __rt_ffs(rt_thread_ready_table[number]) - 1;
 #endif

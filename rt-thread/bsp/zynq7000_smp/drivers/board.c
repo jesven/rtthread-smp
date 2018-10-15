@@ -16,7 +16,6 @@
 #include <rtthread.h>
 
 #include "board.h"
-#include "pf_lock.h"
 
 typedef struct
 {

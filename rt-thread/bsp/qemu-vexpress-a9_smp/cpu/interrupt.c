@@ -26,7 +26,9 @@ struct rt_irq_desc isr_table[MAX_HANDLERS];
 rt_uint32_t rt_interrupt_from_thread;
 rt_uint32_t rt_interrupt_to_thread;
 rt_uint32_t rt_thread_switch_interrupt_flag;
+#ifdef RT_HAVE_SMP
 rt_uint32_t rt_thread_switch_interrupt_to_thread;
+#endif
 
 const unsigned int VECTOR_BASE = 0x00;
 extern void rt_cpu_vector_set_base(unsigned int addr);

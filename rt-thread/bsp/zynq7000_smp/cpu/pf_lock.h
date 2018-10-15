@@ -1,15 +1,17 @@
 #ifndef  __PF_LOCK_H__
 #define  __PF_LOCK_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef RT_HAVE_SMP
-typedef struct {
-    union {
-        unsigned long slock;
-        struct __raw_tickets {
-            unsigned short owner;
-            unsigned short next;
-        } tickets;
-    };
+typedef union {
+    unsigned long slock;
+    struct __raw_tickets {
+        unsigned short owner;
+        unsigned short next;
+    } tickets;
 } raw_spinlock_t;
 
 static inline void __raw_spin_lock(raw_spinlock_t *lock)
@@ -51,5 +53,9 @@ static inline void __raw_spin_unlock(raw_spinlock_t *lock)
 #define __RAW_SPIN_LOCK_INITIALIZER(lockname)  { .slock = 0 }
 
 #endif /*RT_HAVE_SMP*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /*__PF_LOCK_H__*/
