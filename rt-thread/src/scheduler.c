@@ -854,6 +854,14 @@ void rt_schedule_remove_thread(struct rt_thread *thread)
 }
 #endif /*RT_HAVE_SMP*/
 
+#ifdef RT_HAVE_SMP
+
+RT_DEFINE_SPINLOCK(_rt_kernel_lock);
+
+RT_DEFINE_SPINLOCK(_rt_critical_lock);
+
+#endif /*RT_HAVE_SMP*/
+
 /**
  * This function will lock the thread scheduler.
  */
@@ -873,7 +881,7 @@ void rt_enter_critical(void)
 
     if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
     {
-        rt_pf_scheduler_lock();
+        rt_pf_critical_lock();
     }
     rt_current_thread->scheduler_lock_nest ++;
 
@@ -917,7 +925,7 @@ void rt_exit_critical(void)
 
     if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
     {
-        rt_pf_scheduler_unlock();
+        rt_pf_critical_unlock();
     }
 
     if (rt_current_thread->scheduler_lock_nest <= 0)
@@ -984,9 +992,6 @@ RTM_EXPORT(rt_critical_level);
  */
 void rt_post_switch(struct rt_thread *thread)
 {
-#if 0
-    rt_kprintf("%d S %s -> %s\n", rt_cpuid(), rt_current_thread->name, thread->name);
-#endif
     rt_current_thread = thread;
     if (!thread->kernel_lock_nest)
     {
@@ -1001,9 +1006,6 @@ RTM_EXPORT(rt_post_switch);
  */
 void rt_interrupt_post_switch(struct rt_thread *thread)
 {
-#if 0
-    rt_kprintf("%d I %s -> %s\n", rt_cpuid(), rt_current_thread->name, thread->name);
-#endif
     rt_current_thread->kernel_lock_nest--;
     rt_current_thread->scheduler_lock_nest--;
     rt_current_thread = thread;

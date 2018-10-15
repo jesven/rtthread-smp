@@ -30,6 +30,10 @@
 #include <rtm.h>
 #include <arch.h>
 
+#ifdef RT_HAVE_SMP
+#include <rtlock.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
