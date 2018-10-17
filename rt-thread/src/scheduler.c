@@ -870,7 +870,7 @@ void rt_enter_critical(void)
      * enough and does not check here
      */
 
-    if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
+    if (rt_current_thread->scheduler_lock_nest == !!rt_current_thread->kernel_lock_nest)
     {
         rt_pf_critical_lock();
     }
@@ -914,7 +914,7 @@ void rt_exit_critical(void)
 
     rt_current_thread->scheduler_lock_nest --;
 
-    if (rt_current_thread->scheduler_lock_nest == rt_current_thread->kernel_lock_nest)
+    if (rt_current_thread->scheduler_lock_nest == !!rt_current_thread->kernel_lock_nest)
     {
         rt_pf_critical_unlock();
     }
