@@ -87,15 +87,15 @@ void rt_hw_board_init(void)
 
 extern void set_secondy_cpu_boot_address(void);
 //extern void flush_cache_all(void);
-extern void dist_ipi_send(int irq, int cpu);
 
-void secondy_cpu_up(void)
+#ifdef RT_USING_SMP
+void rt_hw_secondy_cpu_up(void)
 {
     set_secondy_cpu_boot_address();
 //    flush_cache_all();
     __asm__ volatile ("dsb":::"memory");
-//    dist_ipi_send(0, 1);
 }
+#endif
 
 #include "gic.h"
 #include "stdint.h"
@@ -120,7 +120,7 @@ typedef struct
 
 #define GT_ISR_STATUS_CLEAR              (1 << 0)
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
 static void gtimer_init(void)
 {
     GLOBAL_TIMER->CONTROL = 0;
@@ -150,10 +150,10 @@ static void gtimer_isr(int vector, void *param)
 
 void secondy_cpu_c_start(void)
 {
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     rt_hw_vector_init();
 
-    rt_pf_kernel_lock();
+    rt_hw_kernel_lock();
 
     arm_gic_cpu_init(0, Zynq7000_GIC_CPU_BASE);
     arm_gic_set_cpu(0, IRQ_Zynq7000_GTIMER, 0x2); //指定到cpu1
@@ -163,12 +163,50 @@ void secondy_cpu_c_start(void)
     rt_hw_interrupt_umask(IRQ_Zynq7000_GTIMER);
 
     rt_system_scheduler_start();
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 }
 
-#ifdef RT_HAVE_SMP
-void plat_secondy_cpu_idle(void)
+#ifdef RT_USING_SMP
+void rt_hw_secondy_cpu_idle_exec(void)
 {
     asm volatile ("wfe":::"memory", "cc");
 }
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
+
+#ifdef RT_USING_SMP
+void rt_hw_spin_lock(rt_hw_spinlock_t *lock)
+{
+    unsigned long tmp;
+    unsigned long newval;
+    rt_hw_spinlock_t lockval;
+
+    __asm__ __volatile__(
+            "pld [%0]"
+            ::"r"(&lock->slock)
+            );
+
+    __asm__ __volatile__(
+            "1: ldrex   %0, [%3]\n"
+            "   add %1, %0, %4\n"
+            "   strex   %2, %1, [%3]\n"
+            "   teq %2, #0\n"
+            "   bne 1b"
+            : "=&r" (lockval), "=&r" (newval), "=&r" (tmp)
+            : "r" (&lock->slock), "I" (1 << 16)
+            : "cc");
+
+    while (lockval.tickets.next != lockval.tickets.owner) {
+        __asm__ __volatile__("wfe":::"memory");
+        lockval.tickets.owner = *(volatile unsigned short *)(&lock->tickets.owner);
+    }
+
+    __asm__ volatile ("dmb":::"memory");
+}
+
+void rt_hw_spin_unlock(rt_hw_spinlock_t *lock)
+{
+    __asm__ volatile ("dmb":::"memory");
+    lock->tickets.owner++;
+    __asm__ volatile ("dsb ishst\nsev":::"memory");
+}
+#endif /*RT_USING_SMP*/

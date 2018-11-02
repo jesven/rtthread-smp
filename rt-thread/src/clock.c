@@ -17,8 +17,8 @@
 #include <rthw.h>
 #include <rtthread.h>
 
-#ifndef RT_HAVE_SMP
-static rt_tick_t rt_tick;
+#ifndef RT_USING_SMP
+static rt_tick_t rt_tick = 0;
 #endif
 
 extern void rt_timer_check(void);
@@ -47,12 +47,12 @@ void rt_system_tick_init(void)
  */
 rt_tick_t rt_tick_get(void)
 {
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     /* return the global tick */
-    return rt_percpu_data[0].rt_cpu_tick;
+    return rt_cpus[0].tick;
 #else
     return rt_tick;
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 }
 RTM_EXPORT(rt_tick_get);
 
@@ -64,12 +64,12 @@ void rt_tick_set(rt_tick_t tick)
     rt_base_t level;
 
     level = rt_hw_interrupt_disable();
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     /* return the global tick */
-    rt_percpu_data[0].rt_cpu_tick = tick;
+    rt_cpus[0].tick = tick;
 #else
     rt_tick = tick;
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
     rt_hw_interrupt_enable(level);
 }
 
@@ -82,7 +82,11 @@ void rt_tick_increase(void)
     struct rt_thread *thread;
 
     /* increase the global tick */
+#ifdef RT_USING_SMP
+    rt_cpu_self()->tick ++;
+#else
     ++ rt_tick;
+#endif
 
     /* check time slice */
     thread = rt_thread_self();

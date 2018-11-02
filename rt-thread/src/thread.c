@@ -82,7 +82,7 @@ void rt_thread_exit(void)
     register rt_base_t level;
 
     /* get current thread */
-    thread = rt_current_thread;
+    thread = rt_thread_self();
 
     /* disable interrupt */
     level = rt_hw_interrupt_disable();
@@ -135,7 +135,7 @@ static rt_err_t _rt_thread_init(struct rt_thread *thread,
     /* init thread stack */
     rt_memset(thread->stack_addr, '#', thread->stack_size);
     thread->sp = (void *)rt_hw_stack_init(thread->entry, thread->parameter,
-                                          (void *)((char *)thread->stack_addr + thread->stack_size - 4),
+                                          (void *)((char *)thread->stack_addr + thread->stack_size - sizeof(rt_ubase_t)),
                                           (void *)rt_thread_exit);
 
     /* priority init */
@@ -157,7 +157,7 @@ static rt_err_t _rt_thread_init(struct rt_thread *thread,
     thread->error = RT_EOK;
     thread->stat  = RT_THREAD_INIT;
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     /* cpu bind */
     thread->bind_cpu = RT_CPUS_NR; //means no bind
 
@@ -165,7 +165,7 @@ static rt_err_t _rt_thread_init(struct rt_thread *thread,
     thread->scheduler_lock_nest = 0;
     thread->kernel_lock_nest = 0;
     thread->oncpu = RT_CPUS_NR;
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
     /* initialize cleanup function and user data */
     thread->cleanup   = 0;
@@ -253,7 +253,15 @@ RTM_EXPORT(rt_thread_init);
  */
 rt_thread_t rt_thread_self(void)
 {
+#ifdef RT_USING_SMP
+    rt_base_t lock;
+
+    lock = rt_hw_local_irq_disable();
+    return rt_cpu_self()->current_thread;
+    rt_hw_local_irq_enable(lock);
+#else
     return rt_current_thread;
+#endif
 }
 RTM_EXPORT(rt_thread_self);
 
@@ -458,16 +466,16 @@ rt_err_t rt_thread_yield(void)
     level = rt_hw_interrupt_disable();
 
     /* set to current thread */
-    thread = rt_current_thread;
+    thread = rt_thread_self();
 
     /* if the thread stat is READY and on ready queue list */
     if ((thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY &&
         thread->tlist.next != thread->tlist.prev)
     {
-        rt_schedule();
-
         /* enable interrupt */
         rt_hw_interrupt_enable(level);
+
+        rt_schedule();
 
         return RT_EOK;
     }
@@ -494,7 +502,7 @@ rt_err_t rt_thread_sleep(rt_tick_t tick)
     /* disable interrupt */
     temp = rt_hw_interrupt_disable();
     /* set to current thread */
-    thread = rt_current_thread;
+    thread = rt_thread_self();
     RT_ASSERT(thread != RT_NULL);
     RT_ASSERT(rt_object_get_type((rt_object_t)thread) == RT_Object_Class_Thread);
 
@@ -621,7 +629,7 @@ rt_err_t rt_thread_control(rt_thread_t thread, int cmd, void *arg)
         return rt_thread_delete(thread);
 #endif
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     case RT_THREAD_CTRL_BIND_CPU:
     {
         rt_uint8_t cpu;
@@ -637,7 +645,7 @@ rt_err_t rt_thread_control(rt_thread_t thread, int cmd, void *arg)
         thread->bind_cpu = cpu;
         break;
     }
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
     default:
         break;
     }
@@ -673,7 +681,7 @@ rt_err_t rt_thread_suspend(rt_thread_t thread)
 
         return -RT_ERROR;
     }
-    if (thread != rt_current_thread)
+    if (thread != rt_thread_self())
     {
         rt_kprintf("suspend: thread is not current!!!!\n");
         while(1);
@@ -807,6 +815,7 @@ rt_thread_t rt_thread_find(char *name)
             return (rt_thread_t)object;
         }
     }
+
     /* leave critical */
     if (rt_thread_self() != RT_NULL)
         rt_exit_critical();

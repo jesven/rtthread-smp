@@ -63,11 +63,11 @@ static void _signal_entry(void *parameter)
     dbg_log(DBG_LOG, "switch back to: 0x%08x\n", tid->sp);
     tid->stat &= ~RT_THREAD_STAT_SIGNAL;
 
-#ifdef RT_HAVE_SMP
-    rt_hw_context_switch_to((rt_uint32_t)&(tid->sp), tid);
+#ifdef RT_USING_SMP
+    rt_hw_context_switch_to((rt_ubase_t)&(tid->sp), tid);
 #else
-    rt_hw_context_switch_to((rt_uint32_t)&(tid->sp));
-#endif /*RT_HAVE_SMP*/
+    rt_hw_context_switch_to((rt_ubase_t)&(tid->sp));
+#endif /*RT_USING_SMP*/
 }
 
 /*

@@ -8,7 +8,7 @@ config RT_NAME_MAX
         Each kernel object, such as thread, timer, semaphore etc, has a name,
         the RT_NAME_MAX is the maximal size of this object name.
 
-config RT_HAVE_SMP
+config RT_USING_SMP
     bool "Enable SMP(Symmetric multiprocessing)"
     default y
 	help
@@ -20,7 +20,7 @@ config RT_HAVE_SMP
 config RT_CPUS_NR
     int "Number of CPUs"
 	default 2
-	depends on RT_HAVE_SMP
+	depends on RT_USING_SMP
     help
 		Number of CPUs in the system
 

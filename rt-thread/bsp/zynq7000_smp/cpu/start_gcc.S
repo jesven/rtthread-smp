@@ -262,9 +262,9 @@ vector_irq:
 
     bl      rt_interrupt_enter
     bl      rt_hw_trap_irq
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     bl      rt_kernel_lock_in_interrupt
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
     bl      rt_interrupt_leave
 
     @ if rt_thread_switch_interrupt_flag set, jump to
@@ -274,9 +274,9 @@ vector_irq:
     cmp     r1, #1
     beq     rt_hw_context_switch_interrupt_do
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     bl      rt_kernel_unlock_in_interrupt
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
     ldmfd   sp!, {r0-r12,lr}
     subs    pc,  lr, #4
 
@@ -309,13 +309,13 @@ rt_hw_context_switch_interrupt_do:
     ldr     r6,  [r6]
     ldr     sp,  [r6]       @ get new task's stack pointer
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     push    {r0-r12,lr}
     ldr     r0, =rt_thread_switch_interrupt_to_thread
     ldr     r0, [r0]
     bl      rt_interrupt_post_switch
     pop     {r0-r12,lr}
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
     ldmfd   sp!, {r4}       @ pop new task's cpsr to spsr
     msr     spsr_cxsf, r4

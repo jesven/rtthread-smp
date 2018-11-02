@@ -48,7 +48,7 @@ void rt_interrupt_leave_sethook(void (*hook)(void))
 
 /**@{*/
 
-#ifndef RT_HAVE_SMP
+#ifndef RT_USING_SMP
 volatile rt_uint8_t rt_interrupt_nest;
 #endif
 
@@ -92,9 +92,9 @@ void rt_interrupt_leave(void)
     rt_interrupt_nest --;
     RT_OBJECT_HOOK_CALL(rt_interrupt_leave_hook,());
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     rt_interrupt_check_schedule();
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
     rt_hw_interrupt_enable(level);
 }

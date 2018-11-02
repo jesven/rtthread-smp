@@ -2,10 +2,6 @@
  * Copyright (c) 2006-2018, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/*
- * File      : rthw.h
  *
  * Change Logs:
  * Date           Author       Notes
@@ -96,7 +92,7 @@ rt_isr_handler_t rt_hw_interrupt_install(int              vector,
                                          void            *param,
                                          char            *name);
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
 rt_base_t rt_hw_local_irq_disable();
 void rt_hw_local_irq_enable(rt_base_t level);
 
@@ -106,25 +102,25 @@ void rt_hw_local_irq_enable(rt_base_t level);
 #else
 rt_base_t rt_hw_interrupt_disable(void);
 void rt_hw_interrupt_enable(rt_base_t level);
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
 /*
  * Context interfaces
  */
-#ifdef RT_HAVE_SMP
-void rt_hw_context_switch(rt_uint32_t from, rt_uint32_t to, struct rt_thread *to_thread);
-void rt_hw_context_switch_to(rt_uint32_t to, struct rt_thread *to_thread);
-void rt_hw_context_switch_interrupt(rt_uint32_t from, rt_uint32_t to, struct rt_thread *to_thread);
+#ifdef RT_USING_SMP
+void rt_hw_context_switch(rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
+void rt_hw_context_switch_to(rt_ubase_t to, struct rt_thread *to_thread);
+void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
 #else
-void rt_hw_context_switch(rt_uint32_t from, rt_uint32_t to);
-void rt_hw_context_switch_to(rt_uint32_t to);
-void rt_hw_context_switch_interrupt(rt_uint32_t from, rt_uint32_t to);
-#endif /*RT_HAVE_SMP*/
+void rt_hw_context_switch(rt_ubase_t from, rt_ubase_t to);
+void rt_hw_context_switch_to(rt_ubase_t to);
+void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to);
+#endif /*RT_USING_SMP*/
 
 void rt_hw_console_output(const char *str);
 
-void rt_hw_backtrace(rt_uint32_t *fp, rt_uint32_t thread_entry);
-void rt_hw_show_memory(rt_uint32_t addr, rt_uint32_t size);
+void rt_hw_backtrace(rt_uint32_t *fp, rt_ubase_t thread_entry);
+void rt_hw_show_memory(rt_uint32_t addr, rt_size_t size);
 
 /*
  * Exception interfaces
@@ -135,6 +131,56 @@ void rt_hw_exception_install(rt_err_t (*exception_handle)(void *context));
  * delay interfaces
  */
 void rt_hw_us_delay(rt_uint32_t us);
+
+#ifdef RT_USING_SMP
+typedef union {
+    unsigned long slock;
+    struct __arch_tickets {
+        unsigned short owner;
+        unsigned short next;
+    } tickets;
+} rt_hw_spinlock_t;
+
+extern void rt_hw_spin_lock(rt_hw_spinlock_t *lock);
+extern void rt_hw_spin_unlock(rt_hw_spinlock_t *lock);
+
+extern rt_hw_spinlock_t _cpus_lock;
+extern rt_hw_spinlock_t _rt_critical_lock;
+
+#define __RT_HW_SPIN_LOCK_INITIALIZER(lockname) {0}
+
+#define __RT_HW_SPIN_LOCK_UNLOCKED(lockname) \
+ (struct rt_hw_spinlock ) __RT_HW_SPIN_LOCK_INITIALIZER(lockname)
+
+#define RT_DEFINE_SPINLOCK(x)  struct rt_hw_spinlock x = __RT_HW_SPIN_LOCK_UNLOCKED(x)
+
+#define rt_hw_kernel_lock() rt_hw_spin_lock(&_cpus_lock);
+#define rt_hw_kernel_unlock() rt_hw_spin_unlock(&_cpus_lock);
+
+#define rt_hw_critical_lock() rt_hw_spin_lock(&_rt_critical_lock);
+#define rt_hw_critical_unlock() rt_hw_spin_unlock(&_rt_critical_lock);
+
+struct rt_cpu *rt_cpu_self(void);
+
+#define rt_interrupt_nest rt_cpu_self()->int_nest
+#define rt_current_thread rt_cpu_self()->current_thread
+
+/**
+ *  ipi function
+ */
+void rt_hw_ipi_send(int irq, unsigned int cpu_mask);
+
+/**
+ * boot scondy cpu
+ */
+void rt_hw_secondy_cpu_up(void);
+
+/**
+ * scondy cpu idle function
+ */
+void rt_hw_secondy_cpu_idle_exec(void);
+
+#endif
 
 #ifdef __cplusplus
 }

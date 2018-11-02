@@ -171,10 +171,6 @@ static rt_uint8_t main_stack[RT_MAIN_THREAD_STACK_SIZE];
 struct rt_thread main_thread;
 #endif
 
-#ifdef RT_HAVE_SMP
-void secondy_cpu_up(void);
-#endif
-
 /* the system main thread */
 void main_thread_entry(void *parameter)
 {
@@ -190,8 +186,8 @@ void main_thread_entry(void *parameter)
 #elif defined(__ICCARM__) || defined(__GNUC__)
     main();
 #endif
-#ifdef RT_HAVE_SMP
-    secondy_cpu_up();
+#ifdef RT_USING_SMP
+    rt_hw_secondy_cpu_up();
 #endif
 }
 
@@ -250,9 +246,9 @@ int rtthread_startup(void)
     /* idle thread initialization */
     rt_thread_idle_init();
 
-#ifdef RT_HAVE_SMP
-    rt_pf_kernel_lock();
-#endif /*RT_HAVE_SMP*/
+#ifdef RT_USING_SMP
+    rt_hw_kernel_lock();
+#endif /*RT_USING_SMP*/
 
     /* start scheduler */
     rt_system_scheduler_start();

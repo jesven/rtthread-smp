@@ -36,7 +36,7 @@
 #endif
 #endif
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
 static struct rt_thread idle[RT_CPUS_NR];
 ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t rt_thread_stack[RT_CPUS_NR][IDLE_THREAD_STACK_SIZE];
@@ -44,7 +44,7 @@ static rt_uint8_t rt_thread_stack[RT_CPUS_NR][IDLE_THREAD_STACK_SIZE];
 static struct rt_thread idle;
 ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t rt_thread_stack[IDLE_THREAD_STACK_SIZE];
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
 extern rt_list_t rt_thread_defunct;
 
@@ -225,21 +225,17 @@ void rt_thread_idle_excute(void)
     }
 }
 
-#ifdef RT_HAVE_SMP
-extern void plat_secondy_cpu_idle(void);
-#endif
-
 static void rt_thread_idle_entry(void *parameter)
 {
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     int cpu_id = rt_cpuid();
 
     if (cpu_id != 0)
     {
         while (1)
         {
-            plat_secondy_cpu_idle();
+            rt_hw_secondy_cpu_idle_exec();
         }
     }
 #endif
@@ -263,7 +259,7 @@ static void rt_thread_idle_entry(void *parameter)
     }
 }
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
 /**
  * @ingroup SystemInit
  *
@@ -311,7 +307,7 @@ void rt_thread_idle_init(void)
     /* startup */
     rt_thread_startup(&idle);
 }
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
 /**
  * @ingroup Thread
@@ -321,7 +317,7 @@ void rt_thread_idle_init(void)
  */
 rt_thread_t rt_thread_idle_gethandler(void)
 {
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     return (rt_thread_t)(&idle[rt_cpuid()]);
 #else
     return (rt_thread_t)(&idle);

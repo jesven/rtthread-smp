@@ -27,7 +27,7 @@
 /*
  * rt_base_t rt_hw_local_irq_disable();
  */
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
 .globl rt_hw_local_irq_disable
 rt_hw_local_irq_disable:
     mrs r0, cpsr
@@ -39,12 +39,12 @@ rt_hw_interrupt_disable:
     mrs r0, cpsr
     cpsid i
     bx  lr
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
 /*
  * void rt_hw_local_irq_enable(rt_base_t level);
  */
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
 .globl rt_hw_local_irq_enable
 rt_hw_local_irq_enable:
     msr cpsr, r0
@@ -54,7 +54,7 @@ rt_hw_local_irq_enable:
 rt_hw_interrupt_enable:
     msr cpsr, r0
     bx  lr
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 /*
  * void rt_hw_context_switch_to(rt_uint32 to);
  * r0 --> to
@@ -63,12 +63,12 @@ rt_hw_interrupt_enable:
 rt_hw_context_switch_to:
     ldr sp, [r0]            @ get new task stack pointer
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     push    {r0-r12,lr}
     mov     r0, r1
     bl      rt_post_switch
     pop     {r0-r12,lr}
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
     ldmfd sp!, {r4}         @ pop new task spsr
     msr spsr_cxsf, r4
@@ -99,12 +99,12 @@ rt_hw_context_switch:
     str sp, [r0]            @ store sp in preempted tasks TCB
     ldr sp, [r1]            @ get new task stack pointer
 
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     push    {r0-r12,lr}
     mov     r0, r2
     bl      rt_post_switch
     pop     {r0-r12,lr}
-#endif /*RT_HAVE_SMP*/
+#endif /*RT_USING_SMP*/
 
     ldmfd sp!, {r4}         @ pop new task cpsr to spsr
     msr spsr_cxsf, r4
@@ -118,12 +118,12 @@ rt_hw_context_switch:
 .globl rt_interrupt_to_thread
 .globl rt_hw_context_switch_interrupt
 rt_hw_context_switch_interrupt:
-#ifdef RT_HAVE_SMP
+#ifdef RT_USING_SMP
     ldr r3, =rt_thread_switch_interrupt_to_thread
 	str r2, [r3]
 #endif
     ldr r2, =rt_thread_switch_interrupt_flag
-#ifndef RT_HAVE_SMP
+#ifndef RT_USING_SMP
     ldr r3, [r2]
     cmp r3, #1
     beq _reswitch
