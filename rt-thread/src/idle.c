@@ -261,6 +261,14 @@ static void rt_thread_idle_entry(void *parameter)
 
 #ifdef RT_USING_SMP
 /**
+ * This function will generate idle thread name
+ */
+static void _rt_tidle_name(char *name_buff, int idx)
+{
+    rt_sprintf(name_buff, "tidle%d", idx);
+}
+
+/**
  * @ingroup SystemInit
  *
  * This function will initialize idle thread, then start it.
@@ -269,29 +277,24 @@ static void rt_thread_idle_entry(void *parameter)
  */
 void rt_thread_idle_init(void)
 {
-    rt_thread_init(&idle[0],
-                   "tidle0",
-                   rt_thread_idle_entry,
-                   RT_NULL,
-                   &rt_thread_stack[0][0],
-                   sizeof(rt_thread_stack[0]),
-                   RT_THREAD_PRIORITY_MAX - 1,
-                   32);
-    rt_thread_control(&idle[0], RT_THREAD_CTRL_BIND_CPU, (void*)0);
-    /* startup */
-    rt_thread_startup(&idle[0]);
+    char tidle_name[RT_NAME_MAX];
+    int i;
 
-    rt_thread_init(&idle[1],
-                   "tidle1",
-                   rt_thread_idle_entry,
-                   RT_NULL,
-                   &rt_thread_stack[1][0],
-                   sizeof(rt_thread_stack[0]),
-                   RT_THREAD_PRIORITY_MAX - 1,
-                   32);
-    rt_thread_control(&idle[1], RT_THREAD_CTRL_BIND_CPU, (void*)1);
-    /* startup */
-    rt_thread_startup(&idle[1]);
+    for (i = 0; i < RT_CPUS_NR; i++)
+    {
+        _rt_tidle_name(tidle_name, i);
+        rt_thread_init(&idle[i],
+                tidle_name,
+                rt_thread_idle_entry,
+                RT_NULL,
+                &rt_thread_stack[i][0],
+                sizeof(rt_thread_stack[i]),
+                RT_THREAD_PRIORITY_MAX - 1,
+                32);
+        rt_thread_control(&idle[i], RT_THREAD_CTRL_BIND_CPU, (void*)i);
+        /* startup */
+        rt_thread_startup(&idle[i]);
+    }
 }
 #else
 void rt_thread_idle_init(void)

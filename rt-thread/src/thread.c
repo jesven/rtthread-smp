@@ -254,11 +254,13 @@ RTM_EXPORT(rt_thread_init);
 rt_thread_t rt_thread_self(void)
 {
 #ifdef RT_USING_SMP
+    rt_thread_t self;
     rt_base_t lock;
 
     lock = rt_hw_local_irq_disable();
-    return rt_cpu_self()->current_thread;
+    self = rt_cpu_self()->current_thread;
     rt_hw_local_irq_enable(lock);
+    return self;
 #else
     return rt_current_thread;
 #endif

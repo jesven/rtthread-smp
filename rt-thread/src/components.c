@@ -180,14 +180,14 @@ void main_thread_entry(void *parameter)
     /* RT-Thread components initialization */
     rt_components_init();
 
+#ifdef RT_USING_SMP
+    rt_hw_secondy_cpu_up();
+#endif
     /* invoke system main function */
 #if defined(__CC_ARM) || defined(__CLANG_ARM)
     $Super$$main(); /* for ARMCC. */
 #elif defined(__ICCARM__) || defined(__GNUC__)
     main();
-#endif
-#ifdef RT_USING_SMP
-    rt_hw_secondy_cpu_up();
 #endif
 }
 
