@@ -245,7 +245,8 @@ vector_irq:
     bl      rt_interrupt_enter
     bl      rt_hw_trap_irq
 #ifdef RT_USING_SMP
-    bl      rt_kernel_lock_in_interrupt
+    bl      rt_cpus_lock
+    stmfd   sp!, {r0}
 #endif /*RT_USING_SMP*/
     bl      rt_interrupt_leave
 
@@ -257,12 +258,16 @@ vector_irq:
     beq     rt_hw_context_switch_interrupt_do
 
 #ifdef RT_USING_SMP
-    bl      rt_kernel_unlock_in_interrupt
+    ldmfd   sp!, {r0}
+    bl      rt_cpus_unlock
 #endif /*RT_USING_SMP*/
     ldmfd   sp!, {r0-r12,lr}
     subs    pc,  lr, #4
 
 rt_hw_context_switch_interrupt_do:
+#ifdef RT_USING_SMP
+    add     sp, #4
+#endif /*RT_USING_SMP*/
     mov     r1,  #0         @ clear flag
     str     r1,  [r0]
 
@@ -293,9 +298,10 @@ rt_hw_context_switch_interrupt_do:
 
 #ifdef RT_USING_SMP
     push    {r0-r12,lr}
+    bl      rt_interrupt_adjust_lock_nest
     ldr     r0, =rt_thread_switch_interrupt_to_thread
     ldr     r0, [r0]
-    bl      rt_interrupt_post_switch
+    bl      rt_post_switch
     pop     {r0-r12,lr}
 #endif /*RT_USING_SMP*/
 

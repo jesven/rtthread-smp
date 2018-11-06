@@ -29,14 +29,40 @@ struct rt_cpu *rt_cpu_self(void)
     return &rt_cpus[rt_cpu_id()];
 }
 
-void rt_cpus_lock(void)
+/**
+ * This function will lock all cpus's scheduler and disable local irq.
+ */
+rt_base_t rt_cpus_lock(void)
 {
-    return ;
+    rt_base_t level;
+    level = rt_hw_local_irq_disable();
+    if (rt_current_thread != RT_NULL)
+    {
+        if (rt_current_thread->kernel_lock_nest++ == 0)
+        {
+            rt_current_thread->scheduler_lock_nest++;
+            rt_hw_kernel_lock();
+        }
+    }
+    return level;
 }
+RTM_EXPORT(rt_cpus_lock);
 
-void rt_cpus_unlock(void)
+/**
+ * This function will restore all cpus's scheduler and restore local irq.
+ */
+void rt_cpus_unlock(rt_base_t level)
 {
-    return ;
+    if (rt_current_thread != RT_NULL)
+    {
+        if (--rt_current_thread->kernel_lock_nest == 0)
+        {
+            rt_current_thread->scheduler_lock_nest--;
+            rt_hw_kernel_unlock();
+        }
+    }
+    rt_hw_local_irq_enable(level);
 }
+RTM_EXPORT(rt_cpus_unlock);
 
 #endif

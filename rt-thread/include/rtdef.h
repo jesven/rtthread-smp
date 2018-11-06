@@ -509,9 +509,9 @@ typedef siginfo_t rt_siginfo_t;
  */
 struct rt_cpu
 {
+    struct rt_thread *current_thread;
     rt_uint8_t int_nest;
     rt_list_t priority_table[RT_THREAD_PRIORITY_MAX];
-    struct rt_thread *current_thread;
     rt_uint8_t current_priority;
 #if RT_THREAD_PRIORITY_MAX > 32
     rt_uint32_t priority_group;

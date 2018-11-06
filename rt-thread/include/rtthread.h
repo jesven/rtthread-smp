@@ -442,11 +442,11 @@ void rt_interrupt_leave(void);
 #ifdef RT_USING_SMP
 
 /*
- * smp kernel lock service
+ * smp cpus lock service
  */
 
-rt_base_t rt_kernel_lock(void);
-void rt_kernel_unlock(rt_base_t level);
+rt_base_t rt_cpus_lock(void);
+void rt_cpus_unlock(rt_base_t level);
 
 #else
 

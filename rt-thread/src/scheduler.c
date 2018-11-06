@@ -981,83 +981,14 @@ RTM_EXPORT(rt_post_switch);
 
 /**
  * This function is invoked by the interrupt routine when it exiting the interrupt.
- * It will unlock the kernel lock when target thread is not lock the kernel.
+ * It will adjust the lock nest in interrupt routine.
  */
-void rt_interrupt_post_switch(struct rt_thread *thread)
+void rt_interrupt_adjust_lock_nest(void)
 {
     rt_current_thread->kernel_lock_nest--;
     rt_current_thread->scheduler_lock_nest--;
-    rt_current_thread = thread;
-    if (!thread->kernel_lock_nest)
-    {
-        rt_hw_kernel_unlock();
-    }
 }
-RTM_EXPORT(rt_interrupt_post_switch);
-
-/**
- * This function will lock the thread scheduler and disable local irq.
- */
-rt_base_t rt_kernel_lock(void)
-{
-    rt_base_t level;
-    level = rt_hw_local_irq_disable();
-    if (rt_current_thread != RT_NULL)
-    {
-        if (rt_current_thread->kernel_lock_nest++ == 0)
-        {
-            rt_current_thread->scheduler_lock_nest++;
-            rt_hw_kernel_lock();
-        }
-    }
-    return level;
-}
-RTM_EXPORT(rt_kernel_lock);
-
-/**
- * This function will restore the thread scheduler and restore local irq.
- */
-void rt_kernel_unlock(rt_base_t level)
-{
-    if (rt_current_thread != RT_NULL)
-    {
-        if (--rt_current_thread->kernel_lock_nest == 0)
-        {
-            rt_current_thread->scheduler_lock_nest--;
-            rt_hw_kernel_unlock();
-        }
-    }
-    rt_hw_local_irq_enable(level);
-}
-RTM_EXPORT(rt_kernel_unlock);
-
-/**
- * This function is the version of rt_hw_interrupt_disable in interrupt.
- */
-void rt_kernel_lock_in_interrupt(void)
-{
-    if (rt_current_thread != RT_NULL)
-    {
-        rt_current_thread->kernel_lock_nest++;
-        rt_current_thread->scheduler_lock_nest++;
-        rt_hw_kernel_lock();
-    }
-}
-RTM_EXPORT(rt_kernel_lock_in_interrupt);
-
-/**
- * This function is the version of rt_hw_interrupt_enable in interrupt.
- */
-void rt_kernel_unlock_in_interrupt(void)
-{
-    if (rt_current_thread != RT_NULL)
-    {
-        rt_hw_kernel_unlock();
-        rt_current_thread->kernel_lock_nest--;
-        rt_current_thread->scheduler_lock_nest--;
-    }
-}
-RTM_EXPORT(rt_kernel_unlock_in_interrupt);
+RTM_EXPORT(rt_interrupt_adjust_lock_nest);
 
 #endif /*RT_USING_SMP*/
 
