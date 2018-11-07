@@ -261,14 +261,6 @@ static void rt_thread_idle_entry(void *parameter)
 
 #ifdef RT_USING_SMP
 /**
- * This function will generate idle thread name
- */
-static void _rt_tidle_name(char *name_buff, int idx)
-{
-    rt_sprintf(name_buff, "tidle%d", idx);
-}
-
-/**
  * @ingroup SystemInit
  *
  * This function will initialize idle thread, then start it.
@@ -282,7 +274,7 @@ void rt_thread_idle_init(void)
 
     for (i = 0; i < RT_CPUS_NR; i++)
     {
-        _rt_tidle_name(tidle_name, i);
+        rt_sprintf(tidle_name, "tidle%d", i);
         rt_thread_init(&idle[i],
                 tidle_name,
                 rt_thread_idle_entry,

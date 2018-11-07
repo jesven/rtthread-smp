@@ -48,7 +48,10 @@ void rt_interrupt_leave_sethook(void (*hook)(void))
 
 /**@{*/
 
-#ifndef RT_USING_SMP
+#ifdef RT_USING_SMP
+#define rt_interrupt_nest rt_cpu_self()->int_nest
+#define rt_current_thread rt_cpu_self()->current_thread
+#else
 volatile rt_uint8_t rt_interrupt_nest;
 #endif
 

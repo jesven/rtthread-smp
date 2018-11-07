@@ -860,7 +860,7 @@ void rt_enter_critical(void)
     /* lock scheduler for all cpus */
     if (current_thread->scheduler_lock_nest == !!current_thread->cpus_lock_nest)
     {
-        rt_hw_critical_lock();
+        rt_hw_spin_lock(&_rt_critical_lock);
     }
 
     /* lock scheduler for local cpu */
@@ -907,7 +907,7 @@ void rt_exit_critical(void)
 
     if (current_thread->scheduler_lock_nest == !!current_thread->cpus_lock_nest)
     {
-        rt_hw_critical_unlock();
+        rt_hw_spin_unlock(&_rt_critical_lock);
     }
 
     if (current_thread->scheduler_lock_nest <= 0)
@@ -980,7 +980,7 @@ void rt_post_switch(struct rt_thread *thread)
     pcpu->current_thread = thread;
     if (!thread->cpus_lock_nest)
     {
-        rt_hw_cpus_unlock();
+        rt_hw_spin_unlock(&_cpus_lock);
     }
 }
 RTM_EXPORT(rt_post_switch);

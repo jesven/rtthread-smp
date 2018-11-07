@@ -555,9 +555,9 @@ struct rt_thread
 
 #ifdef RT_USING_SMP
     rt_uint8_t  bind_cpu;                               /**< thread is bind to cpu */
+    rt_uint8_t  oncpu;                                  /**< process on cpu` */
     rt_uint16_t scheduler_lock_nest;                    /**< scheduler lock count */
     rt_uint16_t cpus_lock_nest;                         /**< cpus lock count */
-    rt_uint16_t oncpu;                                  /**< process on cpu` */
 #endif /*RT_USING_SMP*/
 
     /* priority */

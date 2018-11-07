@@ -31,6 +31,10 @@
 
 extern rt_list_t rt_thread_defunct;
 
+#ifndef RT_USING_SMP
+extern struct rt_thread *rt_current_thread;
+#endif
+
 #ifdef RT_USING_HOOK
 
 static void (*rt_thread_suspend_hook)(rt_thread_t thread);
@@ -661,11 +665,9 @@ rt_err_t rt_thread_suspend(rt_thread_t thread)
 
         return -RT_ERROR;
     }
-    if (thread != rt_thread_self())
-    {
-        rt_kprintf("suspend: thread is not current!!!!\n");
-        while(1);
-    }
+
+    RT_ASSERT(thread != rt_thread_self());
+
     /* disable interrupt */
     temp = rt_hw_interrupt_disable();
 

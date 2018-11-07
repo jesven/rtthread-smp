@@ -17,7 +17,9 @@
 #include <rthw.h>
 #include <rtthread.h>
 
-#ifndef RT_USING_SMP
+#ifdef RT_USING_SMP
+#define rt_tick rt_cpu_index(0)->tick
+#else
 static rt_tick_t rt_tick = 0;
 #endif
 
@@ -47,12 +49,7 @@ void rt_system_tick_init(void)
  */
 rt_tick_t rt_tick_get(void)
 {
-#ifdef RT_USING_SMP
-    /* return the global tick */
-    return rt_cpu_index(0)->tick;
-#else
     return rt_tick;
-#endif /*RT_USING_SMP*/
 }
 RTM_EXPORT(rt_tick_get);
 
@@ -64,12 +61,7 @@ void rt_tick_set(rt_tick_t tick)
     rt_base_t level;
 
     level = rt_hw_interrupt_disable();
-#ifdef RT_USING_SMP
-    /* return the global tick */
-    rt_cpu_index(0)->tick = tick;
-#else
     rt_tick = tick;
-#endif /*RT_USING_SMP*/
     rt_hw_interrupt_enable(level);
 }
 

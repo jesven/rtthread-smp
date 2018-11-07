@@ -23,7 +23,6 @@
 #include <rtdef.h>
 #include <rtservice.h>
 #include <rtm.h>
-#include <arch.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -450,10 +449,6 @@ void rt_cpus_unlock(rt_base_t level);
 
 struct rt_cpu *rt_cpu_self(void);
 struct rt_cpu *rt_cpu_index(int index);
-
-#else
-
-extern  struct rt_thread *rt_current_thread;
 
 #endif
 
