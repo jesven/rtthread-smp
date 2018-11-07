@@ -197,7 +197,7 @@ void rt_system_scheduler_start(void)
                                   tlist);
     }
 
-    to_thread->oncpu = rt_cpu_id();
+    to_thread->oncpu = rt_hw_cpu_id();
     rt_schedule_remove_thread(to_thread);
 
     /* switch to new thread */
@@ -311,7 +311,7 @@ void rt_schedule(void)
 
                 RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (from_thread, to_thread));
 
-                to_thread->oncpu = rt_cpu_id();
+                to_thread->oncpu = rt_hw_cpu_id();
                 rt_schedule_remove_thread(to_thread);
 
                 if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
@@ -321,7 +321,7 @@ void rt_schedule(void)
                         int cpu_id;
                         rt_uint32_t cpu_mask;
 
-                        cpu_id = rt_cpu_id();
+                        cpu_id = rt_hw_cpu_id();
                         cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
                         rt_hw_ipi_send(0, cpu_mask);
                     }
@@ -357,7 +357,7 @@ void rt_schedule(void)
             }
             else
             {
-                current_thread->oncpu = rt_cpu_id();
+                current_thread->oncpu = rt_hw_cpu_id();
                 rt_schedule_remove_thread(current_thread);
                 /* enable interrupt */
                 rt_hw_interrupt_enable(level);
@@ -540,7 +540,7 @@ void rt_interrupt_check_schedule(void)
                 from_thread         = current_thread;
 
                 RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (from_thread, to_thread));
-                to_thread->oncpu = rt_cpu_id();
+                to_thread->oncpu = rt_hw_cpu_id();
                 rt_schedule_remove_thread(to_thread);
 
                 if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
@@ -550,7 +550,7 @@ void rt_interrupt_check_schedule(void)
                         int cpu_id;
                         rt_uint32_t cpu_mask;
 
-                        cpu_id = rt_cpu_id();
+                        cpu_id = rt_hw_cpu_id();
                         cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
                         rt_hw_ipi_send(0, cpu_mask);
                     }
@@ -566,7 +566,7 @@ void rt_interrupt_check_schedule(void)
             }
             else
             {
-                current_thread->oncpu = rt_cpu_id();
+                current_thread->oncpu = rt_hw_cpu_id();
                 rt_schedule_remove_thread(current_thread);
             }
         }
@@ -610,7 +610,7 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
                               &(thread->tlist));
         if (send_ipi)
         {
-            cpu_id = rt_cpu_id();
+            cpu_id = rt_hw_cpu_id();
             cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
             rt_hw_ipi_send(0, cpu_mask);
         }
@@ -621,7 +621,7 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
                               &(thread->tlist));
         if (send_ipi)
         {
-            cpu_id = rt_cpu_id();
+            cpu_id = rt_hw_cpu_id();
             if (cpu_id != thread->bind_cpu)
             {
                 cpu_mask = 1 << thread->bind_cpu;

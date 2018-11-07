@@ -16,17 +16,9 @@
 struct rt_cpu rt_cpus[RT_CPUS_NR];
 rt_hw_spinlock_t _cpus_lock;
 
-/**
- * returns the current CPU id 
- */
-int rt_cpu_id(void)
-{
-    return rt_hw_cpu_id();
-}
-
 struct rt_cpu *rt_cpu_self(void)
 {
-    return &rt_cpus[rt_cpu_id()];
+    return &rt_cpus[rt_hw_cpu_id()];
 }
 
 struct rt_cpu *rt_cpu_index(int index)

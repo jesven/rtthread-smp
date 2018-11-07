@@ -450,7 +450,6 @@ void rt_cpus_unlock(rt_base_t level);
 
 struct rt_cpu *rt_cpu_self(void);
 struct rt_cpu *rt_cpu_index(int index);
-int    rt_cpu_id(void);
 
 #else
 
