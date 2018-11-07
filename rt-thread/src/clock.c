@@ -49,6 +49,7 @@ void rt_system_tick_init(void)
  */
 rt_tick_t rt_tick_get(void)
 {
+    /* return the global tick */
     return rt_tick;
 }
 RTM_EXPORT(rt_tick_get);
