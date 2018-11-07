@@ -26,17 +26,12 @@
                                bug when thread has not startup.
  */
 
-#include <rtthread.h>
 #include <rthw.h>
+#include <rtthread.h>
 
 extern rt_list_t rt_thread_defunct;
 
-#ifndef RT_USING_SMP
-extern struct rt_thread *rt_current_thread;
-#endif
-
 #ifdef RT_USING_HOOK
-
 static void (*rt_thread_suspend_hook)(rt_thread_t thread);
 static void (*rt_thread_resume_hook) (rt_thread_t thread);
 static void (*rt_thread_inited_hook) (rt_thread_t thread);
@@ -162,13 +157,13 @@ static rt_err_t _rt_thread_init(struct rt_thread *thread,
     thread->stat  = RT_THREAD_INIT;
 
 #ifdef RT_USING_SMP
-    /* cpu bind */
-    thread->bind_cpu = RT_CPUS_NR; //means no bind
+    /* not bind on any cpu */
+    thread->bind_cpu = RT_CPUS_NR;
+    thread->oncpu = RT_CPUS_NR;
 
     /* lock init */
     thread->scheduler_lock_nest = 0;
     thread->cpus_lock_nest = 0;
-    thread->oncpu = RT_CPUS_NR;
 #endif /*RT_USING_SMP*/
 
     /* initialize cleanup function and user data */
@@ -258,14 +253,16 @@ RTM_EXPORT(rt_thread_init);
 rt_thread_t rt_thread_self(void)
 {
 #ifdef RT_USING_SMP
-    rt_thread_t self;
     rt_base_t lock;
+    rt_thread_t self;
 
     lock = rt_hw_local_irq_disable();
     self = rt_cpu_self()->current_thread;
     rt_hw_local_irq_enable(lock);
     return self;
 #else
+    extern rt_thread_t rt_current_thread;
+
     return rt_current_thread;
 #endif
 }
@@ -483,12 +480,13 @@ rt_err_t rt_thread_sleep(rt_tick_t tick)
     register rt_base_t temp;
     struct rt_thread *thread;
 
-    /* disable interrupt */
-    temp = rt_hw_interrupt_disable();
     /* set to current thread */
     thread = rt_thread_self();
     RT_ASSERT(thread != RT_NULL);
     RT_ASSERT(rt_object_get_type((rt_object_t)thread) == RT_Object_Class_Thread);
+
+    /* disable interrupt */
+    temp = rt_hw_interrupt_disable();
 
     /* suspend thread */
     rt_thread_suspend(thread);
@@ -620,13 +618,12 @@ rt_err_t rt_thread_control(rt_thread_t thread, int cmd, void *arg)
 
         if ((thread->stat & RT_THREAD_STAT_MASK) != RT_THREAD_INIT)
         {
+            /* we only support bind cpu before started phase. */
             return RT_ERROR;
         }
+
         cpu = (rt_uint8_t)(size_t)arg;
-        if (cpu > RT_CPUS_NR) {
-            cpu = RT_CPUS_NR;
-        }
-        thread->bind_cpu = cpu;
+        thread->bind_cpu = cpu > RT_CPUS_NR? RT_CPUS_NR : cpu;
         break;
     }
 #endif /*RT_USING_SMP*/

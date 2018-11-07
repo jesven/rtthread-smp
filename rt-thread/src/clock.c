@@ -75,11 +75,7 @@ void rt_tick_increase(void)
     struct rt_thread *thread;
 
     /* increase the global tick */
-#ifdef RT_USING_SMP
-    rt_cpu_self()->tick ++;
-#else
-    ++ rt_tick;
-#endif
+	rt_tick ++;
 
     /* check time slice */
     thread = rt_thread_self();
