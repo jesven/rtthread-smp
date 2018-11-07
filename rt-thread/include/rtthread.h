@@ -448,6 +448,10 @@ void rt_interrupt_leave(void);
 rt_base_t rt_cpus_lock(void);
 void rt_cpus_unlock(rt_base_t level);
 
+struct rt_cpu *rt_cpu_self(void);
+struct rt_cpu *rt_cpu_index(int index);
+int    rt_cpu_id(void);
+
 #else
 
 extern  struct rt_thread *rt_current_thread;

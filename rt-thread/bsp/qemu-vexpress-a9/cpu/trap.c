@@ -148,12 +148,6 @@ void rt_hw_trap_irq(void)
         /* Spurious interrupt */
         return;
     }
-#if 0
-    if (ir == 0)
-    {
-        rt_kprintf("cpu %d recieve ipi\n", rt_cpuid());
-    }
-#endif
 
     /* get interrupt service routine */
     isr_func = isr_table[ir].handler;

@@ -16,6 +16,19 @@
 #include <rtthread.h>
 #include <board.h>
 
+#ifdef RT_USING_SMP
+int rt_hw_cpu_id(void)
+{
+    int cpu_id;
+    __asm__ volatile (
+            "mrc p15, 0, %0, c0, c0, 5"
+            :"=r"(cpu_id)
+            );
+    cpu_id &= 0xf;
+    return cpu_id;
+};
+#endif
+
 /**
  * @addtogroup ARM CPU
  */

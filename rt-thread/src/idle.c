@@ -229,7 +229,7 @@ static void rt_thread_idle_entry(void *parameter)
 {
 
 #ifdef RT_USING_SMP
-    int cpu_id = rt_cpuid();
+    int cpu_id = rt_cpu_id();
 
     if (cpu_id != 0)
     {
@@ -321,7 +321,7 @@ void rt_thread_idle_init(void)
 rt_thread_t rt_thread_idle_gethandler(void)
 {
 #ifdef RT_USING_SMP
-    return (rt_thread_t)(&idle[rt_cpuid()]);
+    return (rt_thread_t)(&idle[rt_cpu_id()]);
 #else
     return (rt_thread_t)(&idle);
 #endif

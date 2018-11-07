@@ -247,7 +247,7 @@ int rtthread_startup(void)
     rt_thread_idle_init();
 
 #ifdef RT_USING_SMP
-    rt_hw_kernel_lock();
+    rt_hw_cpus_lock();
 #endif /*RT_USING_SMP*/
 
     /* start scheduler */

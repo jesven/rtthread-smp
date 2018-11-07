@@ -21,12 +21,17 @@ rt_hw_spinlock_t _cpus_lock;
  */
 int rt_cpu_id(void)
 {
-    return rt_cpuid();
+    return rt_hw_cpu_id();
 }
 
 struct rt_cpu *rt_cpu_self(void)
 {
     return &rt_cpus[rt_cpu_id()];
+}
+
+struct rt_cpu *rt_cpu_index(int index)
+{
+    return &rt_cpus[index];
 }
 
 /**
@@ -35,13 +40,17 @@ struct rt_cpu *rt_cpu_self(void)
 rt_base_t rt_cpus_lock(void)
 {
     rt_base_t level;
+    struct rt_cpu* pcpu;
+
     level = rt_hw_local_irq_disable();
-    if (rt_current_thread != RT_NULL)
+
+    pcpu = rt_cpu_self();
+    if (pcpu->current_thread != RT_NULL)
     {
-        if (rt_current_thread->kernel_lock_nest++ == 0)
+        if (pcpu->current_thread->cpus_lock_nest++ == 0)
         {
-            rt_current_thread->scheduler_lock_nest++;
-            rt_hw_kernel_lock();
+            pcpu->current_thread->scheduler_lock_nest++;
+            rt_hw_cpus_lock();
         }
     }
     return level;
@@ -53,12 +62,14 @@ RTM_EXPORT(rt_cpus_lock);
  */
 void rt_cpus_unlock(rt_base_t level)
 {
-    if (rt_current_thread != RT_NULL)
+    struct rt_cpu* pcpu = rt_cpu_self();
+
+    if (pcpu->current_thread != RT_NULL)
     {
-        if (--rt_current_thread->kernel_lock_nest == 0)
+        if (--pcpu->current_thread->cpus_lock_nest == 0)
         {
-            rt_current_thread->scheduler_lock_nest--;
-            rt_hw_kernel_unlock();
+            pcpu->current_thread->scheduler_lock_nest--;
+            rt_hw_cpus_unlock();
         }
     }
     rt_hw_local_irq_enable(level);

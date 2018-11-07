@@ -163,7 +163,7 @@ static rt_err_t _rt_thread_init(struct rt_thread *thread,
 
     /* lock init */
     thread->scheduler_lock_nest = 0;
-    thread->kernel_lock_nest = 0;
+    thread->cpus_lock_nest = 0;
     thread->oncpu = RT_CPUS_NR;
 #endif /*RT_USING_SMP*/
 
@@ -461,29 +461,7 @@ RTM_EXPORT(rt_thread_delete);
  */
 rt_err_t rt_thread_yield(void)
 {
-    register rt_base_t level;
-    struct rt_thread *thread;
-
-    /* disable interrupt */
-    level = rt_hw_interrupt_disable();
-
-    /* set to current thread */
-    thread = rt_thread_self();
-
-    /* if the thread stat is READY and on ready queue list */
-    if ((thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY &&
-        thread->tlist.next != thread->tlist.prev)
-    {
-        /* enable interrupt */
-        rt_hw_interrupt_enable(level);
-
-        rt_schedule();
-
-        return RT_EOK;
-    }
-
-    /* enable interrupt */
-    rt_hw_interrupt_enable(level);
+    rt_schedule();
 
     return RT_EOK;
 }

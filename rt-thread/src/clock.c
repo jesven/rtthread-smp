@@ -49,7 +49,7 @@ rt_tick_t rt_tick_get(void)
 {
 #ifdef RT_USING_SMP
     /* return the global tick */
-    return rt_cpus[0].tick;
+    return rt_cpu_index(0)->tick;
 #else
     return rt_tick;
 #endif /*RT_USING_SMP*/
@@ -66,7 +66,7 @@ void rt_tick_set(rt_tick_t tick)
     level = rt_hw_interrupt_disable();
 #ifdef RT_USING_SMP
     /* return the global tick */
-    rt_cpus[0].tick = tick;
+    rt_cpu_index(0)->tick = tick;
 #else
     rt_tick = tick;
 #endif /*RT_USING_SMP*/

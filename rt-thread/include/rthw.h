@@ -144,6 +144,8 @@ typedef union {
 extern void rt_hw_spin_lock(rt_hw_spinlock_t *lock);
 extern void rt_hw_spin_unlock(rt_hw_spinlock_t *lock);
 
+extern int rt_hw_cpu_id(void);
+
 extern rt_hw_spinlock_t _cpus_lock;
 extern rt_hw_spinlock_t _rt_critical_lock;
 
@@ -154,13 +156,11 @@ extern rt_hw_spinlock_t _rt_critical_lock;
 
 #define RT_DEFINE_SPINLOCK(x)  struct rt_hw_spinlock x = __RT_HW_SPIN_LOCK_UNLOCKED(x)
 
-#define rt_hw_kernel_lock() rt_hw_spin_lock(&_cpus_lock);
-#define rt_hw_kernel_unlock() rt_hw_spin_unlock(&_cpus_lock);
+#define rt_hw_cpus_lock() rt_hw_spin_lock(&_cpus_lock);
+#define rt_hw_cpus_unlock() rt_hw_spin_unlock(&_cpus_lock);
 
 #define rt_hw_critical_lock() rt_hw_spin_lock(&_rt_critical_lock);
 #define rt_hw_critical_unlock() rt_hw_spin_unlock(&_rt_critical_lock);
-
-struct rt_cpu *rt_cpu_self(void);
 
 #define rt_interrupt_nest rt_cpu_self()->int_nest
 #define rt_current_thread rt_cpu_self()->current_thread
