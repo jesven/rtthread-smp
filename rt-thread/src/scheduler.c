@@ -262,7 +262,7 @@ void rt_schedule(void)
     current_thread = pcpu->current_thread;
     /* check the scheduler is enabled or not */
 
-    if (current_thread->scheduler_lock_nest == 1 && pcpu->int_nest == 0)
+    if (current_thread->scheduler_lock_nest == 1 && pcpu->irq_nest == 0)
     {
         register rt_ubase_t highest_ready_priority, local_highest_ready_priority;
 
@@ -332,7 +332,7 @@ void rt_schedule(void)
                         ("[%d]switch to priority#%d "
                          "thread:%.*s(sp:0x%08x), "
                          "from thread:%.*s(sp: 0x%08x)\n",
-                         pcpu->int_nest, highest_ready_priority,
+                         pcpu->irq_nest, highest_ready_priority,
                          RT_NAME_MAX, to_thread->name, to_thread->sp,
                          RT_NAME_MAX, from_thread->name, from_thread->sp));
 
@@ -493,7 +493,7 @@ void rt_interrupt_check_schedule(void)
     struct rt_cpu* pcpu = rt_cpu_self();
     struct rt_thread *current_thread = pcpu->current_thread;
 
-    if (current_thread->scheduler_lock_nest == 1 && pcpu->int_nest == 0)
+    if (current_thread->scheduler_lock_nest == 1 && pcpu->irq_nest == 0)
     {
         register rt_ubase_t highest_ready_priority, local_highest_ready_priority;
 

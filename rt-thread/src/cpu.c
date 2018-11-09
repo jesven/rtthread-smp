@@ -16,6 +16,9 @@
 static struct rt_cpu rt_cpus[RT_CPUS_NR];
 rt_hw_spinlock_t _cpus_lock;
 
+/**
+ * This fucntion will return current cpu.
+ */
 struct rt_cpu *rt_cpu_self(void)
 {
     return &rt_cpus[rt_hw_cpu_id()];

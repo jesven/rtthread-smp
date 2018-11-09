@@ -28,6 +28,11 @@
 #endif
 #endif
 
+#ifdef RT_USING_IDLE_HOOK
+#ifndef RT_IDEL_HOOK_LIST_SIZE
+#define RT_IDEL_HOOK_LIST_SIZE  4
+#endif
+
 #ifndef IDLE_THREAD_STACK_SIZE
 #if defined (RT_USING_IDLE_HOOK) || defined(RT_USING_HEAP)
 #define IDLE_THREAD_STACK_SIZE  256
@@ -37,23 +42,16 @@
 #endif
 
 #ifdef RT_USING_SMP
-static struct rt_thread idle[RT_CPUS_NR];
-ALIGN(RT_ALIGN_SIZE)
-static rt_uint8_t rt_thread_stack[RT_CPUS_NR][IDLE_THREAD_STACK_SIZE];
+#define _CPUS_NR                RT_CPUS_NR
 #else
-static struct rt_thread idle;
-ALIGN(RT_ALIGN_SIZE)
-static rt_uint8_t rt_thread_stack[IDLE_THREAD_STACK_SIZE];
-#endif /*RT_USING_SMP*/
+#define _CPUS_NR                1
+#endif
 
 extern rt_list_t rt_thread_defunct;
 
-#ifdef RT_USING_IDLE_HOOK
-
-#ifndef RT_IDEL_HOOK_LIST_SIZE
-#define RT_IDEL_HOOK_LIST_SIZE          4
-#endif
-
+static struct rt_thread idle[_CPUS_NR];
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t rt_thread_stack[_CPUS_NR][IDLE_THREAD_STACK_SIZE];
 static void (*idle_hook_list[RT_IDEL_HOOK_LIST_SIZE])();
 
 /**
@@ -227,11 +225,8 @@ void rt_thread_idle_excute(void)
 
 static void rt_thread_idle_entry(void *parameter)
 {
-
 #ifdef RT_USING_SMP
-    int cpu_id = rt_hw_cpu_id();
-
-    if (cpu_id != 0)
+    if (rt_hw_cpu_id() != 0)
     {
         while (1)
         {
@@ -242,7 +237,6 @@ static void rt_thread_idle_entry(void *parameter)
 
     while (1)
     {
-
 #ifdef RT_USING_IDLE_HOOK
         rt_size_t i;
 
@@ -259,7 +253,6 @@ static void rt_thread_idle_entry(void *parameter)
     }
 }
 
-#ifdef RT_USING_SMP
 /**
  * @ingroup SystemInit
  *
@@ -269,10 +262,10 @@ static void rt_thread_idle_entry(void *parameter)
  */
 void rt_thread_idle_init(void)
 {
-    char tidle_name[RT_NAME_MAX];
     int i;
+    char tidle_name[RT_NAME_MAX];
 
-    for (i = 0; i < RT_CPUS_NR; i++)
+    for (i = 0; i < _CPUS_NR; i++)
     {
         rt_sprintf(tidle_name, "tidle%d", i);
         rt_thread_init(&idle[i],
@@ -283,26 +276,13 @@ void rt_thread_idle_init(void)
                 sizeof(rt_thread_stack[i]),
                 RT_THREAD_PRIORITY_MAX - 1,
                 32);
+#ifdef RT_USING_SMP
         rt_thread_control(&idle[i], RT_THREAD_CTRL_BIND_CPU, (void*)i);
+#endif
         /* startup */
         rt_thread_startup(&idle[i]);
     }
 }
-#else
-void rt_thread_idle_init(void)
-{
-    rt_thread_init(&idle,
-                   "tidle",
-                   rt_thread_idle_entry,
-                   RT_NULL,
-                   &rt_thread_stack[0],
-                   sizeof(rt_thread_stack),
-                   RT_THREAD_PRIORITY_MAX - 1,
-                   32);
-    /* startup */
-    rt_thread_startup(&idle);
-}
-#endif /*RT_USING_SMP*/
 
 /**
  * @ingroup Thread
@@ -313,8 +293,10 @@ void rt_thread_idle_init(void)
 rt_thread_t rt_thread_idle_gethandler(void)
 {
 #ifdef RT_USING_SMP
-    return (rt_thread_t)(&idle[rt_hw_cpu_id()]);
+    register int id = rt_hw_cpu_id();
 #else
-    return (rt_thread_t)(&idle);
+    register int id = 0;
 #endif
+
+    return (rt_thread_t)(&idle[id]);
 }

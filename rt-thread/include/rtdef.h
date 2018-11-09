@@ -130,11 +130,11 @@ typedef rt_base_t                       rt_off_t;       /**< Type for offset */
         #include <stdarg.h>
     #else
         /* the version of GNU GCC must be greater than 4.x */
-        typedef __builtin_va_list   __gnuc_va_list;
-        typedef __gnuc_va_list      va_list;
-        #define va_start(v,l)       __builtin_va_start(v,l)
-        #define va_end(v)           __builtin_va_end(v)
-        #define va_arg(v,l)         __builtin_va_arg(v,l)
+        typedef __builtin_va_list       __gnuc_va_list;
+        typedef __gnuc_va_list          va_list;
+        #define va_start(v,l)           __builtin_va_start(v,l)
+        #define va_end(v)               __builtin_va_end(v)
+        #define va_arg(v,l)             __builtin_va_arg(v,l)
     #endif
 
     #define SECTION(x)                  __attribute__((section(x)))
@@ -510,15 +510,17 @@ typedef siginfo_t rt_siginfo_t;
 struct rt_cpu
 {
     struct rt_thread *current_thread;
-    rt_uint8_t int_nest;
-    rt_list_t priority_table[RT_THREAD_PRIORITY_MAX];
+    rt_uint8_t irq_nest;
+
     rt_uint8_t current_priority;
+    rt_list_t priority_table[RT_THREAD_PRIORITY_MAX];
 #if RT_THREAD_PRIORITY_MAX > 32
     rt_uint32_t priority_group;
     rt_uint8_t ready_table[32];
 #else
     rt_uint32_t priority_group;
 #endif
+
     rt_tick_t tick;
 };
 
@@ -556,6 +558,7 @@ struct rt_thread
 #ifdef RT_USING_SMP
     rt_uint8_t  bind_cpu;                               /**< thread is bind to cpu */
     rt_uint8_t  oncpu;                                  /**< process on cpu` */
+
     rt_uint16_t scheduler_lock_nest;                    /**< scheduler lock count */
     rt_uint16_t cpus_lock_nest;                         /**< cpus lock count */
 #endif /*RT_USING_SMP*/
