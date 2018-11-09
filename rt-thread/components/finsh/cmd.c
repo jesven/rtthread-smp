@@ -46,6 +46,7 @@
  * 2016-06-02     armink       beautify the list_thread command
  */
 
+#include <rthw.h>
 #include <rtthread.h>
 #include "finsh.h"
 
@@ -146,10 +147,15 @@ static long _list_thread(struct rt_list_node *list)
 
 long list_thread(void)
 {
+    rt_ubase_t level;
     struct rt_object_information *info;
+    long ret;
 
+    level = rt_hw_interrupt_disable();
     info = rt_object_get_information(RT_Object_Class_Thread);
-    return _list_thread(&info->object_list);
+    ret = _list_thread(&info->object_list);
+    rt_hw_interrupt_enable(level);
+    return ret;
 }
 FINSH_FUNCTION_EXPORT(list_thread, list thread);
 MSH_CMD_EXPORT(list_thread, list thread);
