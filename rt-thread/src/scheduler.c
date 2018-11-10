@@ -968,36 +968,4 @@ rt_uint16_t rt_critical_level(void)
 }
 RTM_EXPORT(rt_critical_level);
 
-#ifdef RT_USING_SMP
-/**
- * This function is invoked by scheduler.
- * It will unlock the cpus lock when target thread is not lock the cpus.
- */
-void rt_post_switch(struct rt_thread *thread)
-{
-    struct rt_cpu* pcpu = rt_cpu_self();
-
-    pcpu->current_thread = thread;
-    if (!thread->cpus_lock_nest)
-    {
-        rt_hw_spin_unlock(&_cpus_lock);
-    }
-}
-RTM_EXPORT(rt_post_switch);
-
-/**
- * This function is invoked by the interrupt routine when it exiting the interrupt.
- * It will adjust the lock nest in interrupt routine.
- */
-void rt_interrupt_adjust_lock_nest(void)
-{
-    struct rt_thread *current_thread = rt_cpu_self()->current_thread;
-
-    current_thread->cpus_lock_nest--;
-    current_thread->scheduler_lock_nest--;
-}
-RTM_EXPORT(rt_interrupt_adjust_lock_nest);
-
-#endif /*RT_USING_SMP*/
-
 /**@}*/

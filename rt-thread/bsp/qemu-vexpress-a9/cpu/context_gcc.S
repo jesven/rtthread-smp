@@ -66,7 +66,7 @@ rt_hw_context_switch_to:
 #ifdef RT_USING_SMP
     push    {r0-r12,lr}
     mov     r0, r1
-    bl      rt_post_switch
+    bl      rt_cpus_lock_status_restore
     pop     {r0-r12,lr}
 #endif /*RT_USING_SMP*/
 
@@ -102,7 +102,7 @@ rt_hw_context_switch:
 #ifdef RT_USING_SMP
     push    {r0-r12,lr}
     mov     r0, r2
-    bl      rt_post_switch
+    bl      rt_cpus_lock_status_restore
     pop     {r0-r12,lr}
 #endif /*RT_USING_SMP*/
 

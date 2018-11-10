@@ -301,7 +301,7 @@ rt_hw_context_switch_interrupt_do:
     bl      rt_interrupt_adjust_lock_nest
     ldr     r0, =rt_thread_switch_interrupt_to_thread
     ldr     r0, [r0]
-    bl      rt_post_switch
+    bl      rt_cpus_lock_status_restore
     pop     {r0-r12,lr}
 #endif /*RT_USING_SMP*/
 
