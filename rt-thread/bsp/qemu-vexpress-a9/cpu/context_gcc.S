@@ -64,10 +64,8 @@ rt_hw_context_switch_to:
     ldr sp, [r0]            @ get new task stack pointer
 
 #ifdef RT_USING_SMP
-    push    {r0-r12,lr}
     mov     r0, r1
     bl      rt_cpus_lock_status_restore
-    pop     {r0-r12,lr}
 #endif /*RT_USING_SMP*/
 
     ldmfd sp!, {r4}         @ pop new task spsr
@@ -100,10 +98,8 @@ rt_hw_context_switch:
     ldr sp, [r1]            @ get new task stack pointer
 
 #ifdef RT_USING_SMP
-    push    {r0-r12,lr}
     mov     r0, r2
     bl      rt_cpus_lock_status_restore
-    pop     {r0-r12,lr}
 #endif /*RT_USING_SMP*/
 
     ldmfd sp!, {r4}         @ pop new task cpsr to spsr
