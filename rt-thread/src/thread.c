@@ -663,7 +663,7 @@ rt_err_t rt_thread_suspend(rt_thread_t thread)
         return -RT_ERROR;
     }
 
-    RT_ASSERT(thread != rt_thread_self());
+    RT_ASSERT(thread == rt_thread_self());
 
     /* disable interrupt */
     temp = rt_hw_interrupt_disable();
