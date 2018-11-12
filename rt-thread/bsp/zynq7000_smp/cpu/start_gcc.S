@@ -122,7 +122,6 @@ ctor_end:
 
     /* start RT-Thread Kernel */
     bl      flush_cache_all
-
     ldr     pc, _rtthread_startup
 _rtthread_startup:
     .word rtthread_startup
@@ -251,8 +250,6 @@ vector_fiq:
 .globl      rt_thread_switch_interrupt_flag
 .globl      rt_interrupt_from_thread
 .globl      rt_interrupt_to_thread
-
-.globl      rt_current_thread
 
     .align  5
 .globl vector_irq

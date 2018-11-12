@@ -24,37 +24,29 @@
 
 #include "rtconfig.h"
 .section .text, "ax"
-/*
- * rt_base_t rt_hw_local_irq_disable();
- */
+
 #ifdef RT_USING_SMP
-.globl rt_hw_local_irq_disable
-rt_hw_local_irq_disable:
-    mrs r0, cpsr
-    cpsid i
-    bx  lr
-#else
+#define rt_hw_interrupt_disable rt_hw_local_irq_disable
+#define rt_hw_interrupt_enable  rt_hw_local_irq_enable
+#endif
+
+/*
+ * rt_base_t rt_hw_interrupt_disable();
+ */
 .globl rt_hw_interrupt_disable
 rt_hw_interrupt_disable:
     mrs r0, cpsr
     cpsid i
     bx  lr
-#endif /*RT_USING_SMP*/
 
 /*
- * void rt_hw_local_irq_enable(rt_base_t level);
+ * void rt_hw_interrupt_enable(rt_base_t level);
  */
-#ifdef RT_USING_SMP
-.globl rt_hw_local_irq_enable
-rt_hw_local_irq_enable:
-    msr cpsr, r0
-    bx  lr
-#else
 .globl rt_hw_interrupt_enable
 rt_hw_interrupt_enable:
     msr cpsr, r0
     bx  lr
-#endif /*RT_USING_SMP*/
+
 /*
  * void rt_hw_context_switch_to(rt_uint32 to);
  * r0 --> to
