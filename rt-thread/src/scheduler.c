@@ -101,6 +101,13 @@ static void _rt_scheduler_stack_check(struct rt_thread *thread)
 }
 #endif
 
+#ifdef RT_USING_SMP
+static void _ipi_handler(int vector, void *param)
+{
+    rt_schedule();
+}
+#endif
+
 /**
  * @ingroup SystemInit
  * This function will initialize the system scheduler
@@ -132,6 +139,7 @@ void rt_system_scheduler_init(void)
             rt_list_init(&pcpu->priority_table[offset]);
         }
 
+        pcpu->irq_switch_flag = 0;
         pcpu->current_priority = RT_THREAD_PRIORITY_MAX - 1;
         pcpu->current_thread = RT_NULL;
         pcpu->priority_group = 0;
@@ -140,6 +148,7 @@ void rt_system_scheduler_init(void)
         rt_memset(pcpu->ready_table, 0, sizeof(pcpu->ready_table));
 #endif
     }
+    rt_hw_interrupt_install(RT_IPI_SCHEDULE, _ipi_handler, 0, "IPI_HANDLER");
 #endif /*RT_USING_SMP*/
 
     /* initialize ready priority group */
@@ -155,19 +164,28 @@ void rt_system_scheduler_init(void)
 }
 
 /**
- * @ingroup SystemInit
- * This function will startup scheduler. It will select one thread
- * with the highest priority level, then switch to it.
+ * This function find the highest priority thread struct
+ * note:
+ *      This function must be invoked with local irq is disabled
+ * return:
+ *      the point to the highest priority thread struct
  */
 #ifdef RT_USING_SMP
-void rt_system_scheduler_start(void)
+static struct rt_thread* _get_highest_priority_thread(rt_ubase_t *highest_prio)
 {
-    register struct rt_thread *to_thread;
+    register struct rt_thread *highest_priority_thread;
     register rt_ubase_t highest_ready_priority, local_highest_ready_priority;
     struct rt_cpu* pcpu = rt_cpu_self();
 
 #if RT_THREAD_PRIORITY_MAX > 32
     register rt_ubase_t number;
+
+    if (rt_thread_ready_priority_group == 0 && pcpu->priority_group == 0)
+    {
+        *highest_prio = pcpu->current_thread->current_priority;
+        /* only local IDLE is readly */
+        return pcpu->current_thread;
+    }
 
     number = __rt_ffs(rt_thread_ready_priority_group) - 1;
     highest_ready_priority = (number << 3) + __rt_ffs(rt_thread_ready_table[number]) - 1;
@@ -178,33 +196,28 @@ void rt_system_scheduler_start(void)
     local_highest_ready_priority = __rt_ffs(pcpu->priority_group) - 1;
 #endif
 
+    /* get highest ready priority thread */
     if (highest_ready_priority < local_highest_ready_priority)
     {
-        /* get switch to thread */
-        to_thread = rt_list_entry(rt_thread_priority_table[highest_ready_priority].next,
+        *highest_prio = highest_ready_priority;
+        highest_priority_thread = rt_list_entry(rt_thread_priority_table[highest_ready_priority].next,
                                   struct rt_thread,
                                   tlist);
     }
     else
     {
-        /* get switch to thread */
-        to_thread = rt_list_entry(pcpu->priority_table[local_highest_ready_priority].next,
+        *highest_prio = local_highest_ready_priority;
+        highest_priority_thread = rt_list_entry(pcpu->priority_table[local_highest_ready_priority].next,
                                   struct rt_thread,
                                   tlist);
     }
 
-    to_thread->oncpu = rt_hw_cpu_id();
-    rt_schedule_remove_thread(to_thread);
-
-    /* switch to new thread */
-    rt_hw_context_switch_to((rt_uint32_t)&to_thread->sp, to_thread);
-
-    /* never come back */
+    return highest_priority_thread;
 }
 #else
-void rt_system_scheduler_start(void)
+static struct rt_thread* _get_highest_priority_thread(rt_ubase_t *highest_prio)
 {
-    register struct rt_thread *to_thread;
+    register struct rt_thread *highest_priority_thread;
     register rt_ubase_t highest_ready_priority;
 
 #if RT_THREAD_PRIORITY_MAX > 32
@@ -216,21 +229,46 @@ void rt_system_scheduler_start(void)
     highest_ready_priority = __rt_ffs(rt_thread_ready_priority_group) - 1;
 #endif
 
-    /* get switch to thread */
-    to_thread = rt_list_entry(rt_thread_priority_table[highest_ready_priority].next,
+    /* get highest ready priority thread */
+    highest_priority_thread = rt_list_entry(rt_thread_priority_table[highest_ready_priority].next,
                               struct rt_thread,
                               tlist);
 
+    *highest_prio = highest_ready_priority;
+
+    return highest_priority_thread;
+}
+#endif
+
+/**
+ * @ingroup SystemInit
+ * This function will startup scheduler. It will select one thread
+ * with the highest priority level, then switch to it.
+ */
+void rt_system_scheduler_start(void)
+{
+    register struct rt_thread *to_thread;
+    rt_ubase_t highest_ready_priority;
+
+    to_thread = _get_highest_priority_thread(&highest_ready_priority);
+
+#ifdef RT_USING_SMP
+    to_thread->oncpu = rt_hw_cpu_id();
+#else
     rt_current_thread = to_thread;
+#endif /*RT_USING_SMP*/
 
     rt_schedule_remove_thread(to_thread);
 
     /* switch to new thread */
-    rt_hw_context_switch_to((rt_ubase_t)&to_thread->sp);
+#ifdef RT_USING_SMP
+    rt_hw_context_switch_to((rt_uint32_t)&to_thread->sp, to_thread);
+#else
+    rt_hw_context_switch_to((rt_uint32_t)&to_thread->sp);
+#endif /*RT_USING_SMP*/
 
     /* never come back */
 }
-#endif /*RT_USING_SMP*/
 
 /**
  * @addtogroup Thread
@@ -257,16 +295,22 @@ void rt_schedule(void)
     pcpu = rt_cpu_self();
     current_thread = pcpu->current_thread;
 
-    /* check the scheduler is enabled or not */
-    if (current_thread->scheduler_lock_nest == 1 && pcpu->irq_nest == 0)
+    if (pcpu->irq_nest)
     {
-        register rt_ubase_t highest_ready_priority, local_highest_ready_priority;
+        pcpu->irq_switch_flag = 1;
+
+        /* enable interrupt */
+        rt_hw_interrupt_enable(level);
+        return;
+    }
+
+    /* check the scheduler is enabled or not */
+    if (current_thread->scheduler_lock_nest == 1)
+    {
+        rt_ubase_t highest_ready_priority;
 
         if (rt_thread_ready_priority_group != 0 || pcpu->priority_group != 0)
         {
-#if RT_THREAD_PRIORITY_MAX > 32
-            register rt_ubase_t number;
-#endif
             current_thread->oncpu = RT_CPUS_NR;
             if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
@@ -274,31 +318,7 @@ void rt_schedule(void)
                 _rt_schedule_insert_thread(current_thread, 0);
             }
 
-#if RT_THREAD_PRIORITY_MAX > 32
-            number = __rt_ffs(rt_thread_ready_priority_group) - 1;
-            highest_ready_priority = (number << 3) + __rt_ffs(rt_thread_ready_table[number]) - 1;
-            number = __rt_ffs(pcpu->priority_group) - 1;
-            local_highest_ready_priority = (number << 3) + __rt_ffs(pcpu->ready_table[number]) - 1;
-#else
-            highest_ready_priority = __rt_ffs(rt_thread_ready_priority_group) - 1;
-            local_highest_ready_priority = __rt_ffs(pcpu->priority_group) - 1;
-#endif
-
-            if (highest_ready_priority < local_highest_ready_priority)
-            {
-                /* get switch to thread */
-                to_thread = rt_list_entry(rt_thread_priority_table[highest_ready_priority].next,
-                        struct rt_thread,
-                        tlist);
-            }
-            else
-            {
-                /* get switch to thread */
-                to_thread = rt_list_entry(pcpu->priority_table[local_highest_ready_priority].next,
-                        struct rt_thread,
-                        tlist);
-                highest_ready_priority = local_highest_ready_priority;
-            }
+            to_thread = _get_highest_priority_thread(&highest_ready_priority);
 
             if (to_thread != current_thread)
             {
@@ -320,7 +340,7 @@ void rt_schedule(void)
 
                         cpu_id = rt_hw_cpu_id();
                         cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
-                        rt_hw_ipi_send(0, cpu_mask);
+                        rt_hw_ipi_send(RT_IPI_SCHEDULE, cpu_mask);
                     }
                 }
 
@@ -385,29 +405,17 @@ void rt_schedule(void)
     /* check the scheduler is enabled or not */
     if (rt_scheduler_lock_nest == 0)
     {
-        register rt_ubase_t highest_ready_priority;
+        rt_ubase_t highest_ready_priority;
 
         if (rt_thread_ready_priority_group != 0)
         {
-#if RT_THREAD_PRIORITY_MAX > 32
-            register rt_ubase_t number;
-#endif
             if ((rt_current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
                 rt_schedule_insert_thread(rt_current_thread);
             }
 
-#if RT_THREAD_PRIORITY_MAX > 32
-            number = __rt_ffs(rt_thread_ready_priority_group) - 1;
-            highest_ready_priority = (number << 3) + __rt_ffs(rt_thread_ready_table[number]) - 1;
-#else
-            highest_ready_priority = __rt_ffs(rt_thread_ready_priority_group) - 1;
-#endif
+            to_thread = _get_highest_priority_thread(&highest_ready_priority);
 
-            /* get switch to thread */
-            to_thread = rt_list_entry(rt_thread_priority_table[highest_ready_priority].next,
-                    struct rt_thread,
-                    tlist);
             if (to_thread != rt_current_thread)
             {
                 /* if the destination thread is not the same as current thread */
@@ -490,46 +498,27 @@ void rt_interrupt_check_schedule(void)
     struct rt_cpu* pcpu = rt_cpu_self();
     struct rt_thread *current_thread = pcpu->current_thread;
 
+    if (pcpu->irq_switch_flag == 0)
+    {
+        return;
+    }
+
     if (current_thread->scheduler_lock_nest == 1 && pcpu->irq_nest == 0)
     {
-        register rt_ubase_t highest_ready_priority, local_highest_ready_priority;
+        rt_ubase_t highest_ready_priority;
+
+        pcpu->irq_switch_flag = 0;
 
         if (rt_thread_ready_priority_group != 0 || pcpu->priority_group != 0)
         {
-#if RT_THREAD_PRIORITY_MAX > 32
-            register rt_ubase_t number;
-#endif
             current_thread->oncpu = RT_CPUS_NR;
             if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
                 /* insert to ready list and no ipi */
                 _rt_schedule_insert_thread(current_thread, 0);
             }
-#if RT_THREAD_PRIORITY_MAX > 32
-            number = __rt_ffs(rt_thread_ready_priority_group) - 1;
-            highest_ready_priority = (number << 3) + __rt_ffs(rt_thread_ready_table[number]) - 1;
-            number = __rt_ffs(pcpu->priority_group) - 1;
-            local_highest_ready_priority = (number << 3) + __rt_ffs(pcpu->ready_table[number]) - 1;
-#else
-            highest_ready_priority = __rt_ffs(rt_thread_ready_priority_group) - 1;
-            local_highest_ready_priority = __rt_ffs(pcpu->priority_group) - 1;
-#endif
 
-            if (highest_ready_priority < local_highest_ready_priority)
-            {
-                /* get switch to thread */
-                to_thread = rt_list_entry(rt_thread_priority_table[highest_ready_priority].next,
-                        struct rt_thread,
-                        tlist);
-            }
-            else
-            {
-                /* get switch to thread */
-                to_thread = rt_list_entry(pcpu->priority_table[local_highest_ready_priority].next,
-                        struct rt_thread,
-                        tlist);
-                highest_ready_priority = local_highest_ready_priority;
-            }
+            to_thread = _get_highest_priority_thread(&highest_ready_priority);
 
             if (to_thread != current_thread)
             {
@@ -550,7 +539,7 @@ void rt_interrupt_check_schedule(void)
 
                         cpu_id = rt_hw_cpu_id();
                         cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
-                        rt_hw_ipi_send(0, cpu_mask);
+                        rt_hw_ipi_send(RT_IPI_SCHEDULE, cpu_mask);
                     }
                 }
 
@@ -610,7 +599,7 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
         {
             cpu_id = rt_hw_cpu_id();
             cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
-            rt_hw_ipi_send(0, cpu_mask);
+            rt_hw_ipi_send(RT_IPI_SCHEDULE, cpu_mask);
         }
     }
     else
@@ -623,7 +612,7 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
             if (cpu_id != thread->bind_cpu)
             {
                 cpu_mask = 1 << thread->bind_cpu;
-                rt_hw_ipi_send(0, cpu_mask);
+                rt_hw_ipi_send(RT_IPI_SCHEDULE, cpu_mask);
             }
         }
     }

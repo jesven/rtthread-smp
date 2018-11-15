@@ -503,6 +503,8 @@ typedef siginfo_t rt_siginfo_t;
 
 #define RT_CPU_MASK ((1 << RT_CPUS_NR) - 1)                 /**< All CPUs mask bit. */
 
+#define RT_IPI_SCHEDULE                 0                   /**< CPUS ipi message.  */
+
 /**
  * CPUs definitions
  * 
@@ -510,6 +512,7 @@ typedef siginfo_t rt_siginfo_t;
 struct rt_cpu
 {
     struct rt_thread *current_thread;
+    rt_uint32_t irq_switch_flag;
     rt_uint8_t irq_nest;
 
     rt_uint8_t current_priority;

@@ -159,7 +159,12 @@ extern rt_hw_spinlock_t _rt_critical_lock;
 /**
  *  ipi function
  */
-void rt_hw_ipi_send(int irq, unsigned int cpu_mask);
+void rt_hw_ipi_send(int ipi_vector, unsigned int cpu_mask);
+
+/**
+ * set ipi handler
+ */
+void rt_hw_ipi_handler_install(int ipi_vector, rt_isr_handler_t ipi_isr_handler);
 
 /**
  * boot scondy cpu
