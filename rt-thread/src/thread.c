@@ -159,7 +159,7 @@ static rt_err_t _rt_thread_init(struct rt_thread *thread,
 #ifdef RT_USING_SMP
     /* not bind on any cpu */
     thread->bind_cpu = RT_CPUS_NR;
-    thread->oncpu = RT_CPUS_NR;
+    thread->oncpu = RT_DETACH_CPU;
 
     /* lock init */
     thread->scheduler_lock_nest = 0;

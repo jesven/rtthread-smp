@@ -116,7 +116,7 @@ static long _list_thread(struct rt_list_node *list)
         rt_uint8_t stat;
         thread = rt_list_entry(node, struct rt_thread, list);
 #ifdef RT_USING_SMP
-        if (thread->oncpu != RT_CPUS_NR)
+        if (thread->oncpu != RT_DETACH_CPU)
             rt_kprintf("%-*.*s %3d %3d ", maxlen, RT_NAME_MAX, thread->name, thread->oncpu, thread->current_priority);
         else
             rt_kprintf("%-*.*s N/A %3d ", maxlen, RT_NAME_MAX, thread->name, thread->current_priority);

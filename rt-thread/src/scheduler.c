@@ -311,7 +311,7 @@ void rt_schedule(void)
 
         if (rt_thread_ready_priority_group != 0 || pcpu->priority_group != 0)
         {
-            current_thread->oncpu = RT_CPUS_NR;
+            current_thread->oncpu = RT_DETACH_CPU;
             if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
                 /* insert to ready list and no ipi */
@@ -511,7 +511,7 @@ void rt_interrupt_check_schedule(void)
 
         if (rt_thread_ready_priority_group != 0 || pcpu->priority_group != 0)
         {
-            current_thread->oncpu = RT_CPUS_NR;
+            current_thread->oncpu = RT_DETACH_CPU;
             if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
                 /* insert to ready list and no ipi */
@@ -584,7 +584,7 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
     /* change stat */
     thread->stat = RT_THREAD_READY | (thread->stat & ~RT_THREAD_STAT_MASK);
 
-    if (thread->oncpu != RT_CPUS_NR)
+    if (thread->oncpu != RT_DETACH_CPU)
     {
         rt_hw_interrupt_enable(temp);
         return;

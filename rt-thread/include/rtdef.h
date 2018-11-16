@@ -501,6 +501,8 @@ typedef siginfo_t rt_siginfo_t;
 
 #ifdef RT_USING_SMP
 
+#define RT_DETACH_CPU                   RT_CPUS_NR          /**< The thread not running on cpu. */
+
 #define RT_CPU_MASK ((1 << RT_CPUS_NR) - 1)                 /**< All CPUs mask bit. */
 
 #define RT_IPI_SCHEDULE                 0                   /**< CPUS ipi message.  */
