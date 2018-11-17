@@ -148,7 +148,7 @@ void rt_system_scheduler_init(void)
         rt_memset(pcpu->ready_table, 0, sizeof(pcpu->ready_table));
 #endif
     }
-    rt_hw_interrupt_install(RT_IPI_SCHEDULE, _ipi_handler, 0, "IPI_HANDLER");
+    rt_hw_ipi_handler_install(RT_IPI_SCHEDULE, _ipi_handler);
 #endif /*RT_USING_SMP*/
 
     /* initialize ready priority group */
