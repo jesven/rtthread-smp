@@ -370,10 +370,10 @@ vector_resv:
     bl      rt_hw_trap_resv
     b       .
 
-.global set_secondy_cpu_boot_address
-set_secondy_cpu_boot_address:
+.global set_secondary_cpu_boot_address
+set_secondary_cpu_boot_address:
     ldr r0, =0xfffffff0
-    ldr r1, =secondy_cpu_start 
+    ldr r1, =secondary_cpu_start 
     str r1, [r0]
     mov pc, lr
 
@@ -382,11 +382,11 @@ set_secondy_cpu_boot_address:
 zero_jmp_begin:
     ldr pc, zero_jmp_addr
 zero_jmp_addr:
-    .word secondy_cpu_start
+    .word secondary_cpu_start
 zero_jmp_end:
 
-.global secondy_cpu_start
-secondy_cpu_start:
+.global secondary_cpu_start
+secondary_cpu_start:
     mrc p15, 0, r1, c1, c0, 1
     mov r0, #(1<<6)
     orr r1, r0
@@ -410,7 +410,7 @@ secondy_cpu_start:
     cps #Mode_SVC
     ldr sp, =svc_stack_2_limit
 
-    b secondy_cpu_c_start
+    b secondary_cpu_c_start
 
 .bss
 .align 2   //align to  2~2=4

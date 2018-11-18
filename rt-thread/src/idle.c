@@ -230,7 +230,7 @@ static void rt_thread_idle_entry(void *parameter)
     {
         while (1)
         {
-            rt_hw_secondy_cpu_idle_exec();
+            rt_hw_secondary_cpu_idle_exec();
         }
     }
 #endif

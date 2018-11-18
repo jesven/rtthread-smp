@@ -85,13 +85,13 @@ void rt_hw_board_init(void)
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
 }
 
-extern void set_secondy_cpu_boot_address(void);
+extern void set_secondary_cpu_boot_address(void);
 //extern void flush_cache_all(void);
 
 #ifdef RT_USING_SMP
-void rt_hw_secondy_cpu_up(void)
+void rt_hw_secondary_cpu_up(void)
 {
-    set_secondy_cpu_boot_address();
+    set_secondary_cpu_boot_address();
 //    flush_cache_all();
     __asm__ volatile ("dsb":::"memory");
 }
@@ -148,7 +148,7 @@ static void gtimer_isr(int vector, void *param)
 }
 #endif
 
-void secondy_cpu_c_start(void)
+void secondary_cpu_c_start(void)
 {
 #ifdef RT_USING_SMP
     rt_hw_vector_init();
@@ -167,7 +167,7 @@ void secondy_cpu_c_start(void)
 }
 
 #ifdef RT_USING_SMP
-void rt_hw_secondy_cpu_idle_exec(void)
+void rt_hw_secondary_cpu_idle_exec(void)
 {
     asm volatile ("wfe":::"memory", "cc");
 }
