@@ -289,9 +289,8 @@ void rt_schedule(void)
     rt_base_t level;
     int cpu_id;
     struct rt_thread *to_thread;
-    struct rt_thread *from_thread;
-    struct rt_cpu    *pcpu;
     struct rt_thread *current_thread;
+    struct rt_cpu    *pcpu;
 
     /* disable interrupt */
     level = rt_hw_interrupt_disable();
@@ -311,29 +310,18 @@ void rt_schedule(void)
 
         if (rt_thread_ready_priority_group != 0 || pcpu->priority_group != 0)
         {
+            to_thread = _get_highest_priority_thread(&highest_ready_priority);
             current_thread->oncpu = RT_CPU_DETACHED;
             if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
-                /* insert to ready list and no ipi */
-                _rt_schedule_insert_thread(current_thread, 0);
-            }
-
-            to_thread = _get_highest_priority_thread(&highest_ready_priority);
-            if (to_thread != current_thread)
-            {
-                /* if the destination thread is not the same as current thread */
-                pcpu->current_priority = (rt_uint8_t)highest_ready_priority;
-                from_thread            = current_thread;
-
-                RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (from_thread, to_thread));
-
-                to_thread->oncpu = cpu_id;
-                rt_schedule_remove_thread(to_thread);
-
-                current_thread->oncpu = RT_CPU_DETACHED;
-                if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
+                if (current_thread->current_priority < highest_ready_priority)
+                {
+                    to_thread = current_thread;
+                }
+                else
                 {
                     /* insert to ready list and no ipi */
+                    current_thread->oncpu = RT_CPU_DETACHED;
                     _rt_schedule_insert_thread(current_thread, 0);
 
                     if (current_thread->bind_cpu == RT_CPUS_NR)
@@ -342,6 +330,16 @@ void rt_schedule(void)
                         rt_hw_ipi_send(RT_SCHEDULE_IPI_IRQ, cpu_mask);
                     }
                 }
+            }
+            to_thread->oncpu = cpu_id;
+            if (to_thread != current_thread)
+            {
+                /* if the destination thread is not the same as current thread */
+                pcpu->current_priority = (rt_uint8_t)highest_ready_priority;
+
+                RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (current_thread, to_thread));
+
+                rt_schedule_remove_thread(to_thread);
 
                 /* switch to new thread */
                 RT_DEBUG_LOG(RT_DEBUG_SCHEDULER,
@@ -350,7 +348,7 @@ void rt_schedule(void)
                          "from thread:%.*s(sp: 0x%08x)\n",
                          pcpu->irq_nest, highest_ready_priority,
                          RT_NAME_MAX, to_thread->name, to_thread->sp,
-                         RT_NAME_MAX, from_thread->name, from_thread->sp));
+                         RT_NAME_MAX, current_thread->name, current_thread->sp));
 
 #ifdef RT_USING_OVERFLOW_CHECK
                 _rt_scheduler_stack_check(to_thread);
@@ -359,7 +357,7 @@ void rt_schedule(void)
                 {
                     extern void rt_thread_handle_sig(rt_bool_t clean_state);
 
-                    rt_hw_context_switch((rt_ubase_t)&from_thread->sp,
+                    rt_hw_context_switch((rt_ubase_t)&current_thread->sp,
                                          (rt_ubase_t)&to_thread->sp, to_thread);
 
                     /* enable interrupt */
@@ -371,11 +369,6 @@ void rt_schedule(void)
 #endif
                     goto __exit;
                 }
-            }
-            else
-            {
-                current_thread->oncpu = cpu_id;
-                rt_schedule_remove_thread(current_thread);
             }
         }
     }
@@ -512,35 +505,35 @@ void rt_scheduler_do_irq_switch(void *context)
 
         if (rt_thread_ready_priority_group != 0 || pcpu->priority_group != 0)
         {
+            to_thread = _get_highest_priority_thread(&highest_ready_priority);
             current_thread->oncpu = RT_CPU_DETACHED;
             if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
             {
-                /* insert to ready list and no ipi */
-                _rt_schedule_insert_thread(current_thread, 0);
-            }
-
-            to_thread = _get_highest_priority_thread(&highest_ready_priority);
-
-            if (to_thread != current_thread)
-            {
-                /* if the destination thread is not the same as current thread */
-                pcpu->current_priority = (rt_uint8_t)highest_ready_priority;
-
-                RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (current_thread, to_thread));
-                to_thread->oncpu = cpu_id;
-                rt_schedule_remove_thread(to_thread);
-
-                if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
+                if (current_thread->current_priority < highest_ready_priority)
                 {
-                    /* send IPI manually */
+                    to_thread = current_thread;
+                }
+                else
+                {
+                    /* insert to ready list and no send ipi */
+                    _rt_schedule_insert_thread(current_thread, 0);
                     if (current_thread->bind_cpu == RT_CPUS_NR)
                     {
-                        rt_uint32_t cpu_mask;
-
-                        cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
+                        rt_uint32_t cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
                         rt_hw_ipi_send(RT_SCHEDULE_IPI_IRQ, cpu_mask);
                     }
                 }
+            }
+            to_thread->oncpu = cpu_id;
+            if (to_thread != current_thread)
+            {
+                /* if the destination thread is not the same as current thread */
+
+                pcpu->current_priority = (rt_uint8_t)highest_ready_priority;
+
+                RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (current_thread, to_thread));
+
+                rt_schedule_remove_thread(to_thread);
 
 #ifdef RT_USING_OVERFLOW_CHECK
                 _rt_scheduler_stack_check(to_thread);
@@ -552,11 +545,6 @@ void rt_scheduler_do_irq_switch(void *context)
 
                 rt_hw_context_switch_interrupt(context, (rt_ubase_t)&current_thread->sp,
                         (rt_ubase_t)&to_thread->sp, to_thread);
-            }
-            else
-            {
-                current_thread->oncpu = cpu_id;
-                rt_schedule_remove_thread(current_thread);
             }
         }
     }
