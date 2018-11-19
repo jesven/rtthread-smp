@@ -110,7 +110,7 @@ void rt_hw_interrupt_enable(rt_base_t level);
 #ifdef RT_USING_SMP
 void rt_hw_context_switch(rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
 void rt_hw_context_switch_to(rt_ubase_t to, struct rt_thread *to_thread);
-void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
+void rt_hw_context_switch_interrupt(void *context, rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
 #else
 void rt_hw_context_switch(rt_ubase_t from, rt_ubase_t to);
 void rt_hw_context_switch_to(rt_ubase_t to);
@@ -160,11 +160,6 @@ extern rt_hw_spinlock_t _rt_critical_lock;
  *  ipi function
  */
 void rt_hw_ipi_send(int ipi_vector, unsigned int cpu_mask);
-
-/**
- * set ipi handler
- */
-void rt_hw_ipi_handler_install(int ipi_vector, rt_isr_handler_t ipi_isr_handler);
 
 /**
  * boot secondary cpu

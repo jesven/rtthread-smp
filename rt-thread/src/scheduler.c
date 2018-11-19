@@ -311,6 +311,13 @@ void rt_schedule(void)
 
         if (rt_thread_ready_priority_group != 0 || pcpu->priority_group != 0)
         {
+            current_thread->oncpu = RT_CPU_DETACHED;
+            if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
+            {
+                /* insert to ready list and no ipi */
+                _rt_schedule_insert_thread(current_thread, 0);
+            }
+
             to_thread = _get_highest_priority_thread(&highest_ready_priority);
             if (to_thread != current_thread)
             {
@@ -364,6 +371,11 @@ void rt_schedule(void)
 #endif
                     goto __exit;
                 }
+            }
+            else
+            {
+                current_thread->oncpu = rt_hw_cpu_id();
+                rt_schedule_remove_thread(current_thread);
             }
         }
     }
@@ -471,47 +483,55 @@ __exit:
  * to it.
  */
 #ifdef RT_USING_SMP
-void rt_scheduler_do_irq_switch(void)
+void rt_scheduler_do_irq_switch(void *context)
 {
-    int cpu_id = rt_hw_cpu_id();
-    struct rt_cpu* pcpu = rt_cpu_self();
-    struct rt_thread *current_thread = pcpu->current_thread;
+    rt_base_t level;
+    struct rt_thread *to_thread;
+    struct rt_thread *current_thread;
+    struct rt_cpu* pcpu;
+    int cpu_id;
+
+    level = rt_hw_interrupt_disable();
+
+    cpu_id = rt_hw_cpu_id();
+    pcpu = rt_cpu_self();
+    current_thread = pcpu->current_thread;
 
     if (pcpu->irq_switch_flag == 0)
     {
+        rt_hw_interrupt_enable(level);
         return;
     }
 
     if (current_thread->scheduler_lock_nest == 1 && pcpu->irq_nest == 0)
     {
+        rt_ubase_t highest_ready_priority;
+
         /* clear irq switch flag */
         pcpu->irq_switch_flag = 0;
 
         if (rt_thread_ready_priority_group != 0 || pcpu->priority_group != 0)
         {
-            struct rt_thread *to_thread;
-            struct rt_thread *from_thread;
-
-            rt_ubase_t highest_ready_priority;
+            current_thread->oncpu = RT_CPU_DETACHED;
+            if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
+            {
+                /* insert to ready list and no ipi */
+                _rt_schedule_insert_thread(current_thread, 0);
+            }
 
             to_thread = _get_highest_priority_thread(&highest_ready_priority);
+
             if (to_thread != current_thread)
             {
                 /* if the destination thread is not the same as current thread */
                 pcpu->current_priority = (rt_uint8_t)highest_ready_priority;
-                from_thread            = current_thread;
 
-                RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (from_thread, to_thread));
+                RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (current_thread, to_thread));
                 to_thread->oncpu = cpu_id;
                 rt_schedule_remove_thread(to_thread);
 
-                /* handle current thread */
-                current_thread->oncpu = RT_CPU_DETACHED;
                 if ((current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
                 {
-                    /* insert to ready list and no ipi */
-                    _rt_schedule_insert_thread(current_thread, 0);
-
                     /* send IPI manually */
                     if (current_thread->bind_cpu == RT_CPUS_NR)
                     {
@@ -527,11 +547,20 @@ void rt_scheduler_do_irq_switch(void)
 #endif
                 RT_DEBUG_LOG(RT_DEBUG_SCHEDULER, ("switch in interrupt\n"));
 
-                rt_hw_context_switch_interrupt((rt_ubase_t)&from_thread->sp,
+                current_thread->cpus_lock_nest--;
+                current_thread->scheduler_lock_nest--;
+
+                rt_hw_context_switch_interrupt(context, (rt_ubase_t)&current_thread->sp,
                         (rt_ubase_t)&to_thread->sp, to_thread);
+            }
+            else
+            {
+                current_thread->oncpu = rt_hw_cpu_id();
+                rt_schedule_remove_thread(current_thread);
             }
         }
     }
+    rt_hw_interrupt_enable(level);
 }
 #endif /*RT_USING_SMP*/
 

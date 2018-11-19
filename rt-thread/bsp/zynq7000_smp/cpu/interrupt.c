@@ -22,12 +22,11 @@
 /* exception and interrupt handler table */
 struct rt_irq_desc isr_table[MAX_HANDLERS];
 
+#ifndef RT_USING_SMP
 /* Those varibles will be accessed in ISR, so we need to share them. */
 rt_uint32_t rt_interrupt_from_thread;
 rt_uint32_t rt_interrupt_to_thread;
 rt_uint32_t rt_thread_switch_interrupt_flag;
-#ifdef RT_USING_SMP
-rt_uint32_t rt_thread_switch_interrupt_to_thread;
 #endif
 
 const unsigned int VECTOR_BASE = 0x00;
@@ -61,9 +60,11 @@ void rt_hw_interrupt_init(void)
     arm_gic_cpu_init(0, gic_cpu_base);
 
     /* init interrupt nest, and context in thread sp */
+#ifndef RT_USING_SMP
     rt_interrupt_from_thread = 0;
     rt_interrupt_to_thread = 0;
     rt_thread_switch_interrupt_flag = 0;
+#endif
 }
 
 /**

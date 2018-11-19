@@ -83,6 +83,11 @@ void rt_hw_board_init(void)
 
     rt_components_board_init();
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
+#ifdef RT_USING_SMP
+    /* install IPI interrupt */
+    rt_hw_interrupt_install(RT_SCHEDULE_IPI_IRQ, rt_scheduler_ipi_handler, RT_NULL, "ipi");
+    rt_hw_interrupt_umask(RT_SCHEDULE_IPI_IRQ);
+#endif
 }
 
 extern void set_secondary_cpu_boot_address(void);

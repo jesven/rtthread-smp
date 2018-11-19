@@ -244,12 +244,15 @@ vector_irq:
 
     bl      rt_interrupt_enter
     bl      rt_hw_trap_irq
-#ifdef RT_USING_SMP
-    bl      rt_cpus_lock
-    stmfd   sp!, {r0}
-#endif /*RT_USING_SMP*/
     bl      rt_interrupt_leave
 
+#ifdef RT_USING_SMP
+    mov     r0, sp
+    bl      rt_scheduler_do_irq_switch
+
+    ldmfd   sp!, {r0-r12,lr}
+    subs    pc,  lr, #4
+#else
     @ if rt_thread_switch_interrupt_flag set, jump to
     @ rt_hw_context_switch_interrupt_do and don't return
     ldr     r0, =rt_thread_switch_interrupt_flag
@@ -257,17 +260,10 @@ vector_irq:
     cmp     r1, #1
     beq     rt_hw_context_switch_interrupt_do
 
-#ifdef RT_USING_SMP
-    ldmfd   sp!, {r0}
-    bl      rt_cpus_unlock
-#endif /*RT_USING_SMP*/
     ldmfd   sp!, {r0-r12,lr}
     subs    pc,  lr, #4
 
 rt_hw_context_switch_interrupt_do:
-#ifdef RT_USING_SMP
-    add     sp, #4
-#endif /*RT_USING_SMP*/
     mov     r1,  #0         @ clear flag
     str     r1,  [r0]
 
@@ -296,17 +292,12 @@ rt_hw_context_switch_interrupt_do:
     ldr     r6,  [r6]
     ldr     sp,  [r6]       @ get new task's stack pointer
 
-#ifdef RT_USING_SMP
-    bl      rt_interrupt_adjust_lock_nest
-    ldr     r0, =rt_thread_switch_interrupt_to_thread
-    ldr     r0, [r0]
-    bl      rt_cpus_lock_status_restore
-#endif /*RT_USING_SMP*/
-
     ldmfd   sp!, {r4}       @ pop new task's cpsr to spsr
     msr     spsr_cxsf, r4
 
     ldmfd   sp!, {r0-r12,lr,pc}^ @ pop new task's r0-r12,lr & pc, copy spsr to cpsr
+
+#endif
 
 .macro push_svc_reg
     sub     sp, sp, #17 * 4         @/* Sizeof(struct rt_hw_exp_stack)  */
@@ -355,6 +346,7 @@ vector_resv:
     bl      rt_hw_trap_resv
     b       .
 
+#ifdef RT_USING_SMP
 .global set_secondary_cpu_boot_address
 set_secondary_cpu_boot_address:
     ldr r0, =secondary_cpu_start
@@ -391,6 +383,7 @@ secondary_cpu_start:
     ldr sp, =svc_stack_2_limit
 
     b secondary_cpu_c_start
+#endif
 
 .bss
 .align 2   //align to  2~2=4
