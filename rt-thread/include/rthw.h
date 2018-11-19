@@ -167,14 +167,14 @@ void rt_hw_ipi_send(int ipi_vector, unsigned int cpu_mask);
 void rt_hw_ipi_handler_install(int ipi_vector, rt_isr_handler_t ipi_isr_handler);
 
 /**
- * boot scondy cpu
+ * boot secondary cpu
  */
-void rt_hw_secondy_cpu_up(void);
+void rt_hw_secondary_cpu_up(void);
 
 /**
- * scondy cpu idle function
+ * secondary cpu idle function
  */
-void rt_hw_secondy_cpu_idle_exec(void);
+void rt_hw_secondary_cpu_idle_exec(void);
 
 #endif
 

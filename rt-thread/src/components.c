@@ -181,7 +181,7 @@ void main_thread_entry(void *parameter)
     rt_components_init();
 
 #ifdef RT_USING_SMP
-    rt_hw_secondy_cpu_up();
+    rt_hw_secondary_cpu_up();
 #endif
     /* invoke system main function */
 #if defined(__CC_ARM) || defined(__CLANG_ARM)

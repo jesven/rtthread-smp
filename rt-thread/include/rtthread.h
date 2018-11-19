@@ -183,6 +183,10 @@ rt_uint16_t rt_critical_level(void);
 void rt_scheduler_sethook(void (*hook)(rt_thread_t from, rt_thread_t to));
 #endif
 
+#ifdef RT_USING_SMP
+void rt_scheduler_ipi_handler(int vector, void *param);
+#endif
+
 /**@}*/
 
 /**

@@ -82,7 +82,7 @@ RTM_EXPORT(rt_interrupt_enter);
  *
  * @see rt_interrupt_enter
  */
-extern void rt_interrupt_check_schedule(void);
+extern void rt_scheduler_do_irq_switch(void);
 void rt_interrupt_leave(void)
 {
     rt_base_t level;
@@ -95,7 +95,7 @@ void rt_interrupt_leave(void)
     RT_OBJECT_HOOK_CALL(rt_interrupt_leave_hook,());
 
 #ifdef RT_USING_SMP
-    rt_interrupt_check_schedule();
+    rt_scheduler_do_irq_switch();
 #endif /*RT_USING_SMP*/
 
     rt_hw_interrupt_enable(level);
