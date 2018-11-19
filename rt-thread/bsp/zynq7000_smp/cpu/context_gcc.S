@@ -145,7 +145,6 @@ rt_hw_context_switch_interrupt:
     msr     cpsr_c, #I_Bit|F_Bit|Mode_SVC
     str     sp, [r1]
 
-
     ldr     sp, [r2]
     mov     r0, r3
     bl      rt_cpus_lock_status_restore

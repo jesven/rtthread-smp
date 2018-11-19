@@ -374,7 +374,7 @@ void rt_schedule(void)
             }
             else
             {
-                current_thread->oncpu = rt_hw_cpu_id();
+                current_thread->oncpu = cpu_id;
                 rt_schedule_remove_thread(current_thread);
             }
         }
@@ -555,7 +555,7 @@ void rt_scheduler_do_irq_switch(void *context)
             }
             else
             {
-                current_thread->oncpu = rt_hw_cpu_id();
+                current_thread->oncpu = cpu_id;
                 rt_schedule_remove_thread(current_thread);
             }
         }
