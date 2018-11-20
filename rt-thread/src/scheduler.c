@@ -28,7 +28,6 @@
 
 #ifdef RT_USING_SMP
 rt_hw_spinlock_t _rt_critical_lock;
-static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi);
 #endif /*RT_USING_SMP*/
 
 rt_list_t rt_thread_priority_table[RT_THREAD_PRIORITY_MAX];
@@ -287,10 +286,10 @@ void rt_scheduler_ipi_handler(int vector, void *param)
 void rt_schedule(void)
 {
     rt_base_t level;
-    int cpu_id;
     struct rt_thread *to_thread;
     struct rt_thread *current_thread;
     struct rt_cpu    *pcpu;
+    int cpu_id;
 
     /* disable interrupt */
     level = rt_hw_interrupt_disable();
@@ -320,15 +319,8 @@ void rt_schedule(void)
                 }
                 else
                 {
-                    /* insert to ready list and no ipi */
                     current_thread->oncpu = RT_CPU_DETACHED;
-                    _rt_schedule_insert_thread(current_thread, 0);
-
-                    if (current_thread->bind_cpu == RT_CPUS_NR)
-                    {
-                        rt_uint32_t cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
-                        rt_hw_ipi_send(RT_SCHEDULE_IPI_IRQ, cpu_mask);
-                    }
+                    rt_schedule_insert_thread(current_thread);
                 }
             }
             to_thread->oncpu = cpu_id;
@@ -515,13 +507,7 @@ void rt_scheduler_do_irq_switch(void *context)
                 }
                 else
                 {
-                    /* insert to ready list and no send ipi */
-                    _rt_schedule_insert_thread(current_thread, 0);
-                    if (current_thread->bind_cpu == RT_CPUS_NR)
-                    {
-                        rt_uint32_t cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
-                        rt_hw_ipi_send(RT_SCHEDULE_IPI_IRQ, cpu_mask);
-                    }
+                    rt_schedule_insert_thread(current_thread);
                 }
             }
             to_thread->oncpu = cpu_id;
@@ -557,13 +543,13 @@ void rt_scheduler_do_irq_switch(void *context)
  * thread will be set as READY and remove from suspend queue.
  *
  * @param thread the thread to be inserted
- * @param send_ipi need notify to other CPUs
  * @note Please do not invoke this function in user application.
  */
 #ifdef RT_USING_SMP
-static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
+void rt_schedule_insert_thread(struct rt_thread *thread)
 {
     int cpu_id;
+    int bind_cpu;
     register rt_base_t level;
     rt_uint32_t cpu_mask;
 
@@ -580,76 +566,49 @@ static void _rt_schedule_insert_thread(struct rt_thread *thread, int send_ipi)
         goto __exit;
     }
 
+    cpu_id = rt_hw_cpu_id();
+    bind_cpu = thread->bind_cpu ;
+
     /* insert thread to ready list */
-    if (thread->bind_cpu == RT_CPUS_NR)
+    if (bind_cpu == RT_CPUS_NR)
     {
+#if RT_THREAD_PRIORITY_MAX > 32
+        rt_thread_ready_table[thread->number] |= thread->high_mask;
+#endif
+        rt_thread_ready_priority_group |= thread->number_mask;
+
         rt_list_insert_before(&(rt_thread_priority_table[thread->current_priority]),
                               &(thread->tlist));
-        if (send_ipi)
-        {
-            cpu_id = rt_hw_cpu_id();
-            cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
-            rt_hw_ipi_send(RT_SCHEDULE_IPI_IRQ, cpu_mask);
-        }
+        cpu_mask = RT_CPU_MASK ^ (1 << cpu_id);
+        rt_hw_ipi_send(RT_SCHEDULE_IPI_IRQ, cpu_mask);
     }
     else
     {
-        rt_list_insert_before(&(rt_cpu_index(thread->bind_cpu)->priority_table[thread->current_priority]),
+        struct rt_cpu *pcpu = rt_cpu_index(bind_cpu);
+
+#if RT_THREAD_PRIORITY_MAX > 32
+        pcpu->ready_table[thread->number] |= thread->high_mask;
+#endif
+        pcpu->priority_group |= thread->number_mask;
+
+        rt_list_insert_before(&(rt_cpu_index(bind_cpu)->priority_table[thread->current_priority]),
                               &(thread->tlist));
-        if (send_ipi)
+
+        if (cpu_id != bind_cpu)
         {
-            cpu_id = rt_hw_cpu_id();
-            if (cpu_id != thread->bind_cpu)
-            {
-                cpu_mask = 1 << thread->bind_cpu;
-                rt_hw_ipi_send(RT_SCHEDULE_IPI_IRQ, cpu_mask);
-            }
+            cpu_mask = 1 << bind_cpu;
+            rt_hw_ipi_send(RT_SCHEDULE_IPI_IRQ, cpu_mask);
         }
     }
 
     RT_DEBUG_LOG(RT_DEBUG_SCHEDULER, ("insert thread[%.*s], the priority: %d\n",
                                       RT_NAME_MAX, thread->name, thread->current_priority));
 
-    /* set priority mask */
-    if (thread->bind_cpu == RT_CPUS_NR)
-    {
-#if RT_THREAD_PRIORITY_MAX > 32
-        rt_thread_ready_table[thread->number] |= thread->high_mask;
-#endif
-        rt_thread_ready_priority_group |= thread->number_mask;
-    }
-    else
-    {
-        struct rt_cpu *pcpu = rt_cpu_index(thread->bind_cpu);
-#if RT_THREAD_PRIORITY_MAX > 32
-        pcpu->ready_table[thread->number] |= thread->high_mask;
-#endif
-        pcpu->priority_group |= thread->number_mask;
-    }
-
 __exit:
     /* enable interrupt */
     rt_hw_interrupt_enable(level);
 }
-
-/*
- * This function call _rt_schedule_insert_thread with needs notify other CPUs
- *
- * @param thread the thread to be inserted
- * @note Please do not invoke this function in user application.
- */
-void rt_schedule_insert_thread(struct rt_thread *thread)
-{
-    _rt_schedule_insert_thread(thread, 1);
-}
 #else
-/*
- * This function will insert a thread to system ready queue. The state of
- * thread will be set as READY and remove from suspend queue.
- *
- * @param thread the thread to be inserted
- * @note Please do not invoke this function in user application.
- */
 void rt_schedule_insert_thread(struct rt_thread *thread)
 {
     register rt_base_t temp;
@@ -721,6 +680,7 @@ void rt_schedule_remove_thread(struct rt_thread *thread)
     else
     {
         struct rt_cpu *pcpu = rt_cpu_index(thread->bind_cpu);
+
         if (rt_list_isempty(&(pcpu->priority_table[thread->current_priority])))
         {
 #if RT_THREAD_PRIORITY_MAX > 32
