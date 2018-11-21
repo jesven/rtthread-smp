@@ -515,8 +515,9 @@ typedef siginfo_t rt_siginfo_t;
 struct rt_cpu
 {
     struct rt_thread *current_thread;
-    rt_uint32_t irq_switch_flag;
-    rt_uint8_t irq_nest;
+
+    rt_uint16_t irq_nest;
+    rt_uint8_t  irq_switch_flag;
 
     rt_uint8_t current_priority;
     rt_list_t priority_table[RT_THREAD_PRIORITY_MAX];
