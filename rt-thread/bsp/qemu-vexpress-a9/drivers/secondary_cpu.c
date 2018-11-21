@@ -23,6 +23,15 @@ static void rt_hw_timer2_isr(int vector, void *param)
     timer_clear_pending(0);
 }
 
+void rt_hw_secondary_cpu_up(void)
+{
+    extern void set_secondary_cpu_boot_address(void);
+
+    set_secondary_cpu_boot_address();
+    __asm__ volatile ("dsb":::"memory");
+    rt_hw_ipi_send(0, 1 << 1);
+}
+
 void secondary_cpu_c_start(void)
 {
     rt_hw_vector_init();

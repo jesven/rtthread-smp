@@ -319,7 +319,6 @@ void rt_schedule(void)
                 }
                 else
                 {
-                    current_thread->oncpu = RT_CPU_DETACHED;
                     rt_schedule_insert_thread(current_thread);
                 }
             }
@@ -470,16 +469,16 @@ __exit:
 #ifdef RT_USING_SMP
 void rt_scheduler_do_irq_switch(void *context)
 {
+    int cpu_id;
     rt_base_t level;
+    struct rt_cpu* pcpu;
     struct rt_thread *to_thread;
     struct rt_thread *current_thread;
-    struct rt_cpu* pcpu;
-    int cpu_id;
 
     level = rt_hw_interrupt_disable();
 
     cpu_id = rt_hw_cpu_id();
-    pcpu = rt_cpu_self();
+    pcpu   = rt_cpu_index(cpu_id);
     current_thread = pcpu->current_thread;
 
     if (pcpu->irq_switch_flag == 0)
@@ -550,8 +549,8 @@ void rt_schedule_insert_thread(struct rt_thread *thread)
 {
     int cpu_id;
     int bind_cpu;
-    register rt_base_t level;
     rt_uint32_t cpu_mask;
+    register rt_base_t level;
 
     RT_ASSERT(thread != RT_NULL);
 
@@ -566,7 +565,7 @@ void rt_schedule_insert_thread(struct rt_thread *thread)
         goto __exit;
     }
 
-    cpu_id = rt_hw_cpu_id();
+    cpu_id   = rt_hw_cpu_id();
     bind_cpu = thread->bind_cpu ;
 
     /* insert thread to ready list */

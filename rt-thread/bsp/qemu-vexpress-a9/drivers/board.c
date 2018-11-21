@@ -43,17 +43,6 @@ void rt_hw_board_init(void)
 #endif
 }
 
-extern void set_secondary_cpu_boot_address(void);
-
-#ifdef RT_USING_SMP
-void rt_hw_secondary_cpu_up(void)
-{
-    set_secondary_cpu_boot_address();
-    __asm__ volatile ("dsb":::"memory");
-    rt_hw_ipi_send(0, 1 << 1);
-}
-#endif
-
 #ifdef RT_USING_SMP
 void rt_hw_spin_lock(rt_hw_spinlock_t *lock)
 {
