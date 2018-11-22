@@ -391,12 +391,21 @@ void rt_schedule(void)
 
         if (rt_thread_ready_priority_group != 0)
         {
-            if ((rt_current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
-            {
-                rt_schedule_insert_thread(rt_current_thread);
-            }
+            int need_insert_from_thread = 0;
 
             to_thread = _get_highest_priority_thread(&highest_ready_priority);
+
+            if ((rt_current_thread->stat & RT_THREAD_STAT_MASK) == RT_THREAD_READY)
+            {
+                if (rt_current_thread->current_priority < highest_ready_priority)
+                {
+                    to_thread = rt_current_thread;
+                }
+                else
+                {
+                    need_insert_from_thread = 1;
+                }
+            }
 
             if (to_thread != rt_current_thread)
             {
@@ -406,6 +415,11 @@ void rt_schedule(void)
                 rt_current_thread   = to_thread;
 
                 RT_OBJECT_HOOK_CALL(rt_scheduler_hook, (from_thread, to_thread));
+
+                if (need_insert_from_thread)
+                {
+                    rt_schedule_insert_thread(from_thread);
+                }
 
                 rt_schedule_remove_thread(to_thread);
 
@@ -620,6 +634,11 @@ void rt_schedule_insert_thread(struct rt_thread *thread)
     /* change stat */
     thread->stat = RT_THREAD_READY | (thread->stat & ~RT_THREAD_STAT_MASK);
 
+    if (thread == rt_current_thread)
+    {
+        goto __exit;
+    }
+
     /* insert thread to ready list */
     rt_list_insert_before(&(rt_thread_priority_table[thread->current_priority]),
                           &(thread->tlist));
@@ -633,6 +652,7 @@ void rt_schedule_insert_thread(struct rt_thread *thread)
 #endif
     rt_thread_ready_priority_group |= thread->number_mask;
 
+__exit:
     /* enable interrupt */
     rt_hw_interrupt_enable(temp);
 }
